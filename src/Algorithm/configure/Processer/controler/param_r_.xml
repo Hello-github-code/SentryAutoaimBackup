@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<opencv_storage>
+
+    <lost_time_thres> 1 </lost_time_thres>
+
+    <!--ekf param-->
+    <s2qxyz> 0.2</s2qxyz>
+    <s2qmyaw> 80</s2qmyaw>
+    <s2qryaw> 5 </s2qryaw><!--0.1-->
+
+    <s2qr> 100 </s2qr>
+
+    <r_xyz_factor> 0.0119 </r_xyz_factor><!--9e-3-->
+    <r_myaw> 0.0001 </r_myaw><!--1-->
+    <r_ryaw> 0.001 </r_ryaw><!--0.001-->
+
+    <delay> 0.0 </delay>
+    <odelay> -0.0129 </odelay>
+
+    <true_x> 655 </true_x> <!--665-->
+
+</opencv_storage>

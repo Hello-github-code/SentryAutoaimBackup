@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<opencv_storage>
+<debug_show>0</debug_show>
+<debug_predict_info>1</debug_predict_info>
+<debug_solver_info>1</debug_solver_info>
+<debug_antitop_info>1</debug_antitop_info>
+<debug_camera>0</debug_camera>
+
+</opencv_storage>
