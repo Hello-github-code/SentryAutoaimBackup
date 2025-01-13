@@ -235,13 +235,13 @@ namespace rmos_transporter_r
                     
                     geometry_msgs::msg::TransformStamped t;
                     t.header.stamp =  quaternion_time_msg.quaternion_stamped.header.stamp;
-                    t.header.frame_id = "world_r";
+                    t.header.frame_id = "Gimbal_Link";
                     t.child_frame_id = "IMU_r";
                     t.transform.rotation.x = quaternion_time_msg.quaternion_stamped.quaternion.x;
                     t.transform.rotation.y = quaternion_time_msg.quaternion_stamped.quaternion.y;
                     t.transform.rotation.z = quaternion_time_msg.quaternion_stamped.quaternion.z;
                     t.transform.rotation.w = quaternion_time_msg.quaternion_stamped.quaternion.w;
-                    tf_publisher_->sendTransform(t);
+                    // tf_publisher_->sendTransform(t);
                     break;
                 }
                 case IMU_RECEIVE_ID_LEFT:
@@ -258,7 +258,7 @@ namespace rmos_transporter_r
                     
                     geometry_msgs::msg::TransformStamped t;
                     t.header.stamp =  quaternion_time_msg.quaternion_stamped.header.stamp;
-                    t.header.frame_id = "world_l";
+                    t.header.frame_id = "Gimbal_Link";
                     t.child_frame_id = "IMU_l";
                     t.transform.rotation.x = quaternion_time_msg.quaternion_stamped.quaternion.x;
                     t.transform.rotation.y = quaternion_time_msg.quaternion_stamped.quaternion.y;

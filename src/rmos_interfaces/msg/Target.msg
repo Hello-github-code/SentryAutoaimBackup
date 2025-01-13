@@ -9,5 +9,3 @@ int8 outpost_direction
 float32 v_yaw
 uint8 mode
 geometry_msgs/Point position
-
-

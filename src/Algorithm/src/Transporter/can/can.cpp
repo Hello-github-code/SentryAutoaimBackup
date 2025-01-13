@@ -4,11 +4,8 @@
 
 #include "Transporter/can/can.hpp"
 
-
-
 namespace transporter
 {
-
     int Can::send(uint id, u_char *buf, u_char dlc)
     {
         if (dlc > 8)

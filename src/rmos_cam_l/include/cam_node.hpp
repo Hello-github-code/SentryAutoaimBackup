@@ -5,7 +5,6 @@
 #ifndef RMOS_CAM_NODE_HPP
 #define RMOS_CAM_NODE_HPP
 
-
 //std
 #include <string>
 #include <memory>
@@ -31,7 +30,6 @@
 #include "../../Algorithm/include/Camera/daheng/daheng.hpp"
 #include "../../Algorithm/include/Camera/virtual_cam/virtual_cam.hpp"
 
-
 namespace rmos_cam_l
 {
     class CamNode : public rclcpp::Node
@@ -47,6 +45,7 @@ namespace rmos_cam_l
             sensor_msgs::msg::CameraInfo camera_info_msg_;            // 相机消息
             sensor_msgs::msg::Image::SharedPtr image_msg_;
             cv::Mat image_;
+            cv::Mat image_g;
             std::unique_ptr<camera_info_manager::CameraInfoManager> cam_info_manager_;
             rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_pub_;
 
@@ -66,10 +65,22 @@ namespace rmos_cam_l
         rclcpp::CallbackGroup::SharedPtr target_sub_callback_group_;
         int last_target_mode_=0;
         int this_target_mode_=0;
+        unsigned char lut[256];
         void TargetCallBack(const rmos_interfaces::msg::Target::SharedPtr target);
-
+        void gamma(const cv::Mat & src, cv::Mat &dst)
+        {
+            src.copyTo(dst);
+            cv::MatIterator_<cv::Vec3b> it,end;
+            for (it = dst.begin<cv::Vec3b>(), end = dst.end<cv::Vec3b>(); it != end; it++)
+            {
+                (*it)[0] = lut[((*it)[0])];
+                (*it)[1] = lut[((*it)[1])];
+                (*it)[2] = lut[((*it)[2])];
+            }
+        }
                 // 采图线程
     };
+
     class VirtualCamNode : public virtual CamNode
     {
     public:
@@ -78,13 +89,7 @@ namespace rmos_cam_l
     protected:
         std::shared_ptr<camera::VirtualCam> virtual_dev_;
         std::thread capture_thread_;                    // 采图线程
-
     };
-
-
-
 } // namespace rmos_cam
-
-
 
 #endif //RMOS_CAM_NODE_HPP

@@ -53,17 +53,17 @@ namespace rmos_detector_r
         geometry_msgs::msg::TransformStamped t;
         t.header.stamp =  image_msg->header.stamp;
         t.header.frame_id = "IMU_r";
-        t.child_frame_id = "camera_r";
+        t.child_frame_id = "RCam_Link";
         t.transform.rotation.x = tf2_cam2IMU_quaternion.x();
         t.transform.rotation.y = tf2_cam2IMU_quaternion.y();
         t.transform.rotation.z = tf2_cam2IMU_quaternion.z();
         t.transform.rotation.w = tf2_cam2IMU_quaternion.w();
 
-        //相机到IMU存在位置的偏移，每辆车不同，请在参数文件自行更改
+        // 相机到IMU存在位置的偏移，每辆车不同，请在参数文件自行更改
         t.transform.translation.x = 0.003;
         t.transform.translation.y = 0;
         t.transform.translation.z = 0;
-        this->tf_publisher_->sendTransform(t) ;
+        // this->tf_publisher_->sendTransform(t);
 
 
 

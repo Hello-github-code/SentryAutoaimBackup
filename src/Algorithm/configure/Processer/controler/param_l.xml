@@ -4,17 +4,22 @@
     <lost_time_thres> 1 </lost_time_thres>
 
     <!--ekf param-->
-    <s2qxyz> 0.02</s2qxyz>
-    <s2qmyaw> 0.01</s2qmyaw>
-    <s2qryaw> 0.5 </s2qryaw><!--0.1-->
+    <s2q_xyz> 0.008 </s2q_xyz>
+    <s2q_myaw> 0.001 </s2q_myaw>
+    <s2q_ryaw> 0.005 </s2q_ryaw> <!--0.1-->
+    <s2q_a_xy> 0.02 </s2q_a_xy>
 
-    <s2qr> 0.001 </s2qr>
+    <s2q_r> 0.001 </s2q_r>
 
-    <r_xyz_factor> 0.09 </r_xyz_factor><!--9e-3-->
-    <r_myaw> 0.001 </r_myaw><!--1-->
-    <r_ryaw> 0.05 </r_ryaw><!--0.001-->
+    <r_xyz_factor> 0.09 </r_xyz_factor> <!--9e-3-->
+    <r_myaw> 0.001 </r_myaw> <!--1-->
+    <r_ryaw> 0.000036 </r_ryaw> <!--0.001-->
+    <r_a_xy> 0.09 </r_a_xy> <!--9e-3-->
 
     <delay> 0.185 </delay>
     <true_x> 660 </true_x> <!--665-->
+
+    <gun_pitch_offset> -2.5 </gun_pitch_offset> <!-- -0.5 -->
+    <gun_yaw_offset> 0.93 </gun_yaw_offset> <!-- 0.93 -->
 
 </opencv_storage>

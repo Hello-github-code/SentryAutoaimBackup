@@ -1,8 +1,8 @@
 # RMOS_DDS
-- 2024 双云台哨兵自瞄代码
-- 2024.4.2 
+- 2025 双云台哨兵自瞄代码
+- 2025.1.13 
 ## 环境配置
-    -ros2-foxy
+    -ros2-humble
     -opencv4.4.0
     -Eigen
 ## CmakeList.txt
@@ -10,10 +10,10 @@
 
 ## 运行节点
 
-- 相机节点： daheng_cam  启动命令：`ros2 run rmos_cam daheng_camera`
-- 传统识别节点：basic_detector 启动命令： `ros2 run rmos_detector basic_detector`
-- 解算节点：processer              启动命令：`ros2 run rmos_processer processer`
-- 通信节点 ： can_comm            启动命令：`ros2 run rmos_transporter can_comm`
+- 相机节点： daheng_cam           启动命令：`ros2 run rmos_cam daheng_camera`
+- 传统识别节点：basic_detector     启动命令：`ros2 run rmos_detector basic_detector`
+- 解算节点：processer             启动命令：`ros2 run rmos_processer processer`
+- 通信节点：can_comm              启动命令：`ros2 run rmos_transporter can_comm`
 
 ## 如何启动程序
 `source install/setup.bash`

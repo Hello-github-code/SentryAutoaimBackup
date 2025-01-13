@@ -7,4 +7,4 @@ bool type
 bool[2] gap
 float32 k
 uint8 confidence
-
+float32 yaw

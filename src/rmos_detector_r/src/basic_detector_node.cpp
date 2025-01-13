@@ -10,17 +10,12 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "std_msgs/msg/bool.hpp"
 
-
-
 //STD
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-
-
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -31,14 +26,11 @@
 
 #include "../include/detector_node.hpp"
 
-
 namespace rmos_detector_r
 {
     void BasicDetectorNode::imageCallBack(const sensor_msgs::msg::Image::ConstSharedPtr &image_msg)
     {
-
-
-        //发布相机到陀螺仪的静态tf
+        // 发布相机到陀螺仪的静态tf
         cv::Mat cam2IMU_matrix;
         cam2IMU_matrix = (cv::Mat_<double>(3, 3) <<0,0,1,-1,0,0,0,-1,0);
         tf2::Matrix3x3 tf2_cam2IMU_matrix(
@@ -54,19 +46,17 @@ namespace rmos_detector_r
         geometry_msgs::msg::TransformStamped t;
         t.header.stamp =  image_msg->header.stamp;
         t.header.frame_id = "IMU_r";
-        t.child_frame_id = "camera_r";
+        t.child_frame_id = "RCam_Link";
         t.transform.rotation.x = tf2_cam2IMU_quaternion.x();
         t.transform.rotation.y = tf2_cam2IMU_quaternion.y();
         t.transform.rotation.z = tf2_cam2IMU_quaternion.z();
         t.transform.rotation.w = tf2_cam2IMU_quaternion.w();
 
-        //相机到IMU存在位置的偏移，每辆车不同，请在参数文件自行更改
+        // 相机到IMU存在位置的偏移，每辆车不同，请在参数文件自行更改
         t.transform.translation.x = 0.005;
         t.transform.translation.y = 0;
         t.transform.translation.z = 0.012;
-        this->tf_publisher_->sendTransform(t) ;
-
-
+        this->tf_publisher_->sendTransform(t);
 
         rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
         auto time1 = steady_clock_.now();
@@ -74,17 +64,20 @@ namespace rmos_detector_r
         std::vector<base::Armor> armors;
         detector_->detectArmors(image,armors);
 
-        
         onnx_classifier_->classifyArmors(image,armors);
-
+        // jun2_classfier_->extractNumbers(image,armors);
         rmos_interfaces::msg::Armors armors_msg;
         rmos_interfaces::msg::Armor armor_msg;
         armors_msg.header = image_msg->header;
 
-        for(auto &armor : armors)
+        for (auto &armor : armors)
         {
-            if(armor.num_id==6&&(armor.right.rrect.center.x - armor.left.rrect.center.x)/(armor.left.length + armor.right.length) * 2.0>3.25)
-            continue;
+            if (armor.num_id == 6 && (armor.right.rrect.center.x - armor.left.rrect.center.x) / (armor.left.length + armor.right.length) * 2.0 > 3.25)
+                continue;
+
+            if (armor.num_id == 6 && armor.confidence < 0.7)
+                continue;
+
             std::string text1 = std::to_string(armor.num_id);
             std::string text2 = std::to_string(int(armor.confidence*100));
             cv::putText(image, text1, armor.left.up, cv::FONT_HERSHEY_SIMPLEX, 0.5,
@@ -94,26 +87,74 @@ namespace rmos_detector_r
             cv::line(image,armor.left.up,armor.right.down ,cv::Scalar(255, 0, 255),1);
             cv::line(image,armor.left.down,armor.right.up ,cv::Scalar(255, 0, 255),1);
 
-             for(int i=0;i<4;i++)
+            for (int i = 0; i < 4; i++)
             {
                 armor_msg.points[2*i]=armor.points[i].x;
                 armor_msg.points[2*i+1]=armor.points[i].y;
             }
-            armor_msg.confidence=100*armor.confidence;
+            armor_msg.confidence = 100 * armor.confidence;
 
-            if(armor.num_id==6&&armor.confidence<0.7)
-            continue;
             cv::Mat tVec;
             cv::Mat rVec;
             bool is_solve;
-            is_solve = this->pnp_solver_->solveArmorPose(armor,this->camera_matrix_,this->dist_coeffs_,tVec,rVec);
-            if(!is_solve)
-            {
+            is_solve = this->pnp_solver_->solveArmorPose(armor, this->camera_matrix_, this->dist_coeffs_, tVec, rVec);
+            if (!is_solve) {
                 RCLCPP_WARN(this->get_logger(), "camera param empty");
             }
+
+            double middle_k;
+            if (abs(armor.left.k_d - armor.right.k_d) > 0.6) {
+                if (armor.left.k_d < 0)
+                    middle_k = armor.right.k_d;
+                else
+                    middle_k = armor.left.k_d;
+            }
+            else
+                middle_k = (armor.left.k_d + armor.right.k_d) / 2;
+            // double middle_k = 80;
+            if (abs(middle_k) < 50)
+                middle_k = 90;
+
+            double k_p = middle_k > 0 ? 90 - middle_k : -(90 + middle_k);
+            double tempyaw = 0.002;
+            for (int i = 1; i <= 450; i++)
+            {
+                cv::Mat armor_R = (cv::Mat_<double>(3,3) << cos(tempyaw/2)*cos(15.0/180*CV_PI/2),
+                                                            -sin(tempyaw/2),
+                                                            cos(tempyaw/2)*sin(15.0/180*CV_PI/2),
+                                                            sin(tempyaw/2)*cos(15.0/180*CV_PI/2),
+                                                            cos(tempyaw/2),
+                                                            sin(tempyaw/2)*sin(15.0/180*CV_PI/2),
+                                                            -sin(15.0/180*CV_PI/2),
+                                                            0,
+                                                            cos(15.0/180*CV_PI/2));
+
+                //    std::cout<<"yaw="<< atan(camera_matrix_.at<double>(1,1)*(armor_R.at<double>(1,0)*small_height*sin(15.0/180*CV_PI/2)+armor_R.at<double>(1,2)*small_height*cos(15.0/180*CV_PI/2))/
+                //            (camera_matrix_.at<double>(0,0)*(armor_R.at<double>(0,0)*small_height*sin(15.0/180*CV_PI/2)+armor_R.at<double>(0,2)*small_height*cos(15.0/180*CV_PI/2))))/3.1415926*180
+                //            <<" I="<<i<<'\n';
+
+                if (
+                    (abs(k_p - atan( 
+                            (camera_matrix_.at<double>(1,1) * (armor_R.at<double>(1,0) * small_height * sin(15.0/180*CV_PI/2) + armor_R.at<double>(1,2) * small_height*cos(15.0/180*CV_PI/2))) /
+                            (camera_matrix_.at<double>(0,0) * (armor_R.at<double>(0,0) * small_height * sin(15.0/180*CV_PI/2) + armor_R.at<double>(0,2) * small_height*cos(15.0/180*CV_PI/2))) 
+                        ) / CV_PI * 180 ) < 0.2)
+                   )
+                    break;
+                else
+                {
+                    if (k_p > 0)
+                        tempyaw += 0.002;
+                    else
+                        tempyaw -= 0.002;
+                }
+            }
+            // std::cout << "yawwwwwwwwwwwwwwww=" << tempyaw*2/CV_PI*180 << '\n';
+            armor_msg.yaw = tempyaw * 2;
+
             armor_msg.pose.position.x = tVec.at<double>(0, 0)/1000;
             armor_msg.pose.position.y = tVec.at<double>(1, 0)/1000;
             armor_msg.pose.position.z = tVec.at<double>(2, 0)/1000;
+            
             // rvec to 3x3 rotation matrix
             cv::Mat rotation_matrix;
             cv::Rodrigues(rVec, rotation_matrix);
@@ -134,12 +175,12 @@ namespace rmos_detector_r
             armor_msg.distance_to_image_center = sqrt((center.x-armor.rrect.center.x)*(center.x-armor.rrect.center.x)+
                                                       (center.y-armor.rrect.center.y)*(center.y-armor.rrect.center.y));
             armor_msg.num_id = armor.num_id;
-            if(armor.type==base::SMALL)
-            armor_msg.type=false;
-            else if(armor.type==base::BIG)
-            armor_msg.type=true;
+            if (armor.type == base::SMALL)
+                armor_msg.type = false;
+            else if (armor.type == base::BIG)
+                armor_msg.type = true;
 
-            armor_msg.k=armor.k_;
+            armor_msg.k = armor.k_;
             double distance = sqrt(armor_msg.pose.position.x*armor_msg.pose.position.x+
                                            armor_msg.pose.position.y*armor_msg.pose.position.y+
                                            armor_msg.pose.position.z*armor_msg.pose.position.z);
@@ -148,13 +189,10 @@ namespace rmos_detector_r
                         cv::Scalar(0, 255, 0), 0.5);
             //std::cout << "distance________" << distance << std::endl;
             armors_msg.armors.push_back(armor_msg);
-
         }
         auto time2 = steady_clock_.now();
 
         if(debug::get_debug_option(base::SHOW_DETECT_COST))RCLCPP_INFO(this->get_logger(), "Cost %.4f ms", (time2-time1).seconds() * 1000);
-
-
 
         if(debug::get_debug_option(base::SHOW_ARMOR))
         {
@@ -169,15 +207,8 @@ namespace rmos_detector_r
         }
 
         armors_pub_->publish(armors_msg);
-
     }
-
-
-
-
-
 }
-
 
 #include <rclcpp_components/register_node_macro.hpp>
 

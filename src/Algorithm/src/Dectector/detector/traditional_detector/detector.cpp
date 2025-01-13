@@ -2,22 +2,19 @@
 // Created by nuc12 on 23-6-23.
 //
 
-
-
 #include "Dectector/detector/traditional_detector/detector.hpp"
 
 namespace detector
 {
-
     Detector::Detector()
     {
         cv::FileStorage fs("./src/Algorithm/configure/Detector/detector/traditional_detector/param.xml", cv::FileStorage::READ);
 
-        if(!fs.isOpened())
-        {
-            std::cout<<"open traditional detect param fail"<<std::endl;
+        if (!fs.isOpened()) {
+            std::cout << "open traditional detect param fail" << std::endl;
             exit(0);
         }
+
         fs["blue_threshold"] >> process_params_.blue_threshold;
         fs["red_threshold"] >> process_params_.red_threshold;
         fs["blue_red_diff"] >> process_params_.blue_red_diff;
@@ -43,24 +40,20 @@ namespace detector
             this->enemy_color_ = base::Color::BLUE;
         }
 
-
         fs.release();
     }
 
-
     bool Detector::detectArmors(const cv::Mat & image, std::vector<base::Armor>& armors)
     {
-
-        if(image.empty())return false;
-
+        if (image.empty()) return false;
 
         src_ = image;
         std::vector<base::LightBlob> lights;
-        bool is_find_lights = this->findLights(image,lights);
+        bool is_find_lights = this->findLights(image, lights);
         bool is_find_armors = false;
-        if(is_find_lights)
+        if (is_find_lights)
         {
-            is_find_armors = this->matchLights(lights,armors);
+            is_find_armors = this->matchLights(lights, armors);
         }
         else
         {
@@ -101,11 +94,11 @@ namespace detector
        {
          for (int j = 0; j<4; j++)
         {
-          cv::Mat roi_img,ori_img;
-          cv::Rect rect(j*1280/4, i*720/4, 1280/4, 720/4);
+          cv::Mat roi_img, ori_img;
+          cv::Rect rect(j * 1280 / 4, i * 720 / 4, 1280 / 4, 720 / 4);
           gray(rect).copyTo(roi_img);
-          if(cv::countNonZero(roi_img-0)!=0)
-         {     
+          if (cv::countNonZero(roi_img - 0) != 0)
+        {     
 
              image(rect).copyTo(ori_img);
              std::vector<cv::Mat> bgr;
@@ -130,10 +123,7 @@ namespace detector
 
             temp_binary.copyTo(binary(cv::Rect(j*1280/4,  i*720/4, 1280/4, 720/4)));
          }
-      
-
     }
-    
   }
         cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
         cv::morphologyEx(binary, binary, cv::MORPH_CLOSE, element);
@@ -174,6 +164,7 @@ namespace detector
             angle_k = 0;
             } else {
             auto k = return_param[1] / return_param[0];
+            light.k_d=atan(k)/3.1415926*180;
             auto b = (return_param[3] + b_rect.y) - k * (return_param[2] + b_rect.x);
             top = cv::Point2f((b_rect.y - b) / k, b_rect.y);
             bottom = cv::Point2f((b_rect.y + b_rect.height - b) / k, b_rect.y + b_rect.height); 
@@ -181,13 +172,11 @@ namespace detector
             light.up = top;
             light.down = bottom;
             light.k=abs(top.x-bottom.x);
+           
 
       //      std::cout<<top.x<<" ??? "<<bottom.x<<"dd   "<< light.k<<'\n';
 
-
-
-
-            if(isLight(light))
+            if (isLight(light))
             {
                 lights.push_back(light);
             }
@@ -212,15 +201,11 @@ namespace detector
         {
             return false;
         }
-
         return true;
-
     }
 
-    bool Detector::matchLights(std::vector<base::LightBlob>& lights,std::vector<base::Armor>& armors)
+    bool Detector::matchLights(std::vector<base::LightBlob>& lights, std::vector<base::Armor>& armors)
     {
-
-
         armors.clear();
         std::vector<base::Armor> temp_armors;
         std::vector<std::vector<int>> armors_lights;
@@ -258,16 +243,14 @@ namespace detector
                     lights[i].matched_count ++;
                     lights[j].matched_count ++;
                     temp_armors.push_back(base::Armor(lights[i], lights[j]));
-                   //std::vector<int>temp={i,j};
+                    //std::vector<int>temp={i,j};
                     //armors_lights.push_back(temp);
-
                 }
                 else
                 {
                     continue;
                 }
             }
-
         }
 
         armors = temp_armors;
@@ -346,9 +329,7 @@ namespace detector
 //            armors = temp_armors;
 //        }
 
-
         return true;
-
     }
 
     bool  Detector::isArmor(base::LightBlob light_1,base::LightBlob light_2)
@@ -383,9 +364,6 @@ namespace detector
             return false;
         }
 
-
-
-
         //  滤除类如窗户形成的伪装甲板，即装甲板区域过亮
         cv::Mat temp_inarmor = src_(temp.rect & cv::Rect2d(cv::Point(0, 0), src_.size()));
         cv::cvtColor(temp_inarmor, temp_inarmor, cv::COLOR_BGR2GRAY);
@@ -394,11 +372,7 @@ namespace detector
             return false;
         }
 
-
-
-
         return true;
-
     }
 
     bool Detector::setEnemyColor(int enemy_color)
@@ -419,7 +393,4 @@ namespace detector
             return false;
         }
     }
-
-
-
 }

@@ -1,8 +1,8 @@
 //
 // Created by Wang on 23-6-16.
 //
-#include "Dectector/detector/cj_detector/cj_detector.hpp"
 
+#include "Dectector/detector/cj_detector/cj_detector.hpp"
 
 namespace detector
 {
@@ -10,11 +10,12 @@ namespace detector
     {
         cv::FileStorage fs("./src/Algorithm/configure/Detector/detector/cj_detector/param.xml", cv::FileStorage::READ);
 
-        if(!fs.isOpened())
+        if (!fs.isOpened())
         {
-            std::cout<<"open cj detect param fail"<<std::endl;
+            std::cout << "open cj detect param fail" << std::endl;
             exit(0);
         }
+
         fs["binary_thres"] >> process_params_.binary_thres;
         fs["enemy_color"] >> process_params_.enemy_color;
         fs["min_ratio"] >> light_params_.min_ratio;
@@ -30,16 +31,15 @@ namespace detector
         fs.release();
     }
 
-
     bool CjDetector::detectArmors(const cv::Mat & image, std::vector<base::Armor>& armors)
     {
         src_ = image;
         std::vector<base::LightBlob> lights;
-        if(!findLights(image,lights))
+        if (!findLights(image,lights))
         {
             return false;
         }
-        if(!matchLights(lights,armors))
+        if (!matchLights(lights,armors))
         {
             return false;
         }
@@ -56,19 +56,17 @@ namespace detector
 //        cv::imshow("HelloWorld",src_);
 //        cv::waitKey(1);
         return true;
-
     }
 
     bool CjDetector::findLights(const cv::Mat & image, std::vector<base::LightBlob>& lights)
     {
-
         cv::Mat gray_img;
         cv::cvtColor(image, gray_img, cv::COLOR_RGB2GRAY);
 
         cv::Mat binary_img;
         cv::threshold(gray_img, binary_img, process_params_.binary_thres, 255, cv::THRESH_BINARY);
 
-        //cv::imshow("2",binary_img);
+        // cv::imshow("2",binary_img);
         using std::vector;
         vector <vector<cv::Point>> contours;
         vector <cv::Vec4i> hierarchy;
@@ -106,10 +104,7 @@ namespace detector
                     light.color = sum_r > sum_b ? base::RED : base::BLUE;
                     lights.emplace_back(light);
                 }
-
             }
-
-
         }
         return true;
     }
@@ -122,9 +117,7 @@ namespace detector
         bool is_light = ratio_ok && angle_ok;
 
         return is_light;
-
     }
-
 
     bool CjDetector::matchLights(std::vector<base::LightBlob>& lights,std::vector<base::Armor>& armors) {
         for (auto light_1 = lights.begin(); light_1 != lights.end(); light_1++) {
@@ -156,11 +149,8 @@ namespace detector
                     float avg_light_length = ((*light_1).length +(*light_2).length) / 2;
                     float center_distance = cv::norm((*light_1).rrect.center - (*light_2).rrect.center) / avg_light_length;
                     armor.type = center_distance > armor_params_.min_large_center_distance ? base::BIG : base::SMALL;
-
-
                 }
             }
-
         }
         return true;
     }
@@ -186,12 +176,8 @@ namespace detector
 
         bool is_armor = light_ratio_ok && center_distance_ok && angle_ok;
 
-
-
         return is_armor;
-
     }
-
 
     bool CjDetector::setEnemyColor(int enemy_color)
     {
@@ -211,7 +197,4 @@ namespace detector
             return false;
         }
     }
-
-
-
 }

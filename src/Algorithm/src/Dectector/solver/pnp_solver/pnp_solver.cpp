@@ -5,7 +5,7 @@
 #include "Dectector/solver/pnp_solver/pnp_solver.hpp"
 namespace detector
 {
-    bool PnpSolver::solveArmorPose(const base::Armor& armor,const cv::Mat& camera_matrix,const cv::Mat& dist_coeffs,cv::Mat &tVec, cv::Mat &rVec)
+    bool PnpSolver::solveArmorPose(const base::Armor& armor, const cv::Mat& camera_matrix, const cv::Mat& dist_coeffs, cv::Mat &tVec, cv::Mat &rVec)
     {
         if (camera_matrix.empty())
             return false;
@@ -26,9 +26,5 @@ namespace detector
         }
 
         return true;
-
-
-
     }
-
 }

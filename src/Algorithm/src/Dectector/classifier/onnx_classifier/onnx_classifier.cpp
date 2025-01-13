@@ -1,12 +1,12 @@
 //
 // Created by nuc12 on 23-6-26.
 //
+
 #pragma once
 #include <opencv2/opencv.hpp>
 #include <utility>
 #include "Dectector/classifier/onnx_classifier/onnx_classifier.hpp"
 #include <cmath>
-
 
 namespace detector {
 
@@ -21,9 +21,9 @@ namespace detector {
         }                                                        \
     } while (0);
 
-    std::string robot_names[16]={"Base","Hero","Engineer","Infantry3","Infantry4",
-                                 "Infantry5","Sentry","Outpost","Error1","Error2",
-                                 "Error4","Balance3","Balance4","Balance5"};
+    std::string robot_names[16] = {"Base","Hero","Engineer","Infantry3","Infantry4",
+                                   "Infantry5","Sentry","Outpost","Error1","Error2",
+                                   "Error4","Balance3","Balance4","Balance5"};
 
     bool OnnxClassifier::classifyArmors(const cv::Mat &image, std::vector <base::Armor> &armors)
     {
@@ -35,31 +35,29 @@ namespace detector {
             armor.rect.height *= 2.0 * box_height_enlarge;
             armor.rect &= cv::Rect2d(cv::Point(0, 0), image.size());
             temp = image(cv::Rect2d(armor.rect));
-            gamma(temp, temp, 0.6);
+            // gamma(temp, temp, 0.6);
             cv::Mat num_image = cv::Mat::zeros(144,240,CV_8UC3);
-            if(temp.cols <= 10 || temp.rows <= 10)
+            if (temp.cols <= 10 || temp.rows <= 10)
             {
                 armor.type = base::ArmorType::WRONG;
                 continue;
             }
 
             cv::resize(temp,num_image,num_image.size());
-            // cv::imshow("num",num_image);
+            // cv::imshow("num", num_image);
             
             double confidence = 0;
             armor.num_id = this->classifyArmor(temp,confidence);
             armor.confidence = confidence;
-            if(true && save_count_ % 3 == 0)
+            if (true && save_count_ % 3 == 0)
             {
                 std::string save_path = "/home/nuc12/workspace/database/";
                 save_path += std::to_string(armor.num_id) + "_" + std::to_string(save_count_) + "ttt.jpg";
-
                 cv::imwrite(save_path, image);
             }
-           save_count_++;
+            save_count_++;
             switch (armor.num_id)
             {
-
                     // case 0:
                     case 1:
                     case 11:
@@ -71,9 +69,9 @@ namespace detector {
                     case 2:
                     case 3:
                     case 4:
-                   case 5:
+                    case 5:
                     case 6:
-                   case 7:
+                    case 7:
                         armor.type = base::ArmorType::SMALL;
                         break;
 
@@ -81,14 +79,14 @@ namespace detector {
                         armor.type = base::ArmorType::WRONG;
                         break;
             }
-
         }
+
         armors.erase(
                 std::remove_if(
                         armors.begin(), armors.end(),
                         [this](const base::Armor & armor) {
 
-                            if ( armor.type == base::ArmorType::WRONG) {
+                            if (armor.type == base::ArmorType::WRONG) {
                                 return true;
                             }
                             else
@@ -97,12 +95,10 @@ namespace detector {
                             }
 
                         }),
-                armors.end());
-
+        armors.end());
 
         return true;
     }
-
 
     int OnnxClassifier::classifyArmor(const cv::Mat &num_roi, double &confidence)
     {
@@ -111,13 +107,11 @@ namespace detector {
         std::string getname = "None";
         bool cls_success = false;
         cv::Mat temp = num_roi;
-        cls_success = this->classify(temp,getlabel,getconf,getname);
-        if(cls_success)
+        cls_success = this->classify(temp, getlabel, getconf, getname);
+        if (cls_success)
         {
-
             confidence = getconf;
             return getlabel;
-
         }
         else
         {
@@ -148,6 +142,7 @@ namespace detector {
         ORT_ABORT_ON_ERROR(g_ort->CreateSession(env_, model_path, session_options_, &session_));
         verify_input_output_count(session_);
     }
+
     OnnxClassifier::OnnxClassifier()
     {
         g_ort = OrtGetApiBase()->GetApi(ORT_API_VERSION);
@@ -165,8 +160,6 @@ namespace detector {
         verify_input_output_count(session_);
     }
 
-
-
     void OnnxClassifier::ort_release() {
         g_ort->ReleaseSessionOptions(session_options_);
         g_ort->ReleaseSession(session_);
@@ -176,18 +169,18 @@ namespace detector {
     bool OnnxClassifier::classify(cv::Mat &input_image, int &label, float &conf, std::string& name) {
         input_image_ = input_image;
         process_image_ = input_image.clone();
-        if(process_image_.empty())
+        if (process_image_.empty())
         {
             return false;
         }
         int flag = run_inference(session_, label, conf);
-        if(flag==-1)
+        if (flag==-1)
         {
             return false;
         }
         name = robot_names[label];
-        //std::cout<<conf<<std::endl;
-        if(conf >= conf_thres_)return true;
+        // std::cout << conf << std::endl;
+        if (conf >= conf_thres_) return true;
         else return false;
     }
 
@@ -201,7 +194,7 @@ namespace detector {
         const size_t model_input_len = model_input_ele_count * sizeof(float);
 
         bool flag = preprocessing(process_image_,&model_input,&model_input_ele_count);
-        if(flag==false)
+        if (flag==false)
         {
             return -1;
         }
@@ -352,5 +345,4 @@ namespace detector {
         *infer_data = temp_data;
         return true;
     }
-
 }

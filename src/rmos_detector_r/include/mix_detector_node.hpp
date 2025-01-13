@@ -102,7 +102,7 @@ namespace rmos_detector_r
             this->armors_pub_ = this->create_publisher<rmos_interfaces::msg::Armors>("/rmos_detector/armors_r", rclcpp::SensorDataQoS());
 
             //debug info publisher
-            debug_img_pub_ = image_transport::create_camera_publisher(this, "/debug_image_r", rmw_qos_profile_default);
+            debug_img_pub_ = image_transport::create_camera_publisher(this, "/debug_RGB_image_r", rmw_qos_profile_default);
             debug_bin_img_pub_ = image_transport::create_camera_publisher(this, "/debug_bin_image_r", rmw_qos_profile_default);
 
 

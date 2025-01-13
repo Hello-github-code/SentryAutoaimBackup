@@ -1,19 +1,16 @@
-
 #include "Debug/debug.hpp"
-
-
 
 namespace debug
 {
-       bool get_debug_option(int option)
+    bool get_debug_option(int option)
     {
         try
         {
             cv::FileStorage fs("./src/Algorithm/configure/Debug/debug.xml", cv::FileStorage::READ);
             bool result;
 
-            fs["contest"]>>result;
-            if(result)
+            fs["contest"] >> result;
+            if (result)
             {
                 fs.release();
                 return false;
@@ -53,8 +50,4 @@ namespace debug
             return false;
         }
     }
-        
-       
-        
-
 }

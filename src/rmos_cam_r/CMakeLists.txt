@@ -37,15 +37,11 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 target_link_libraries(${PROJECT_NAME} gxiapi ${OpenCV_LIBS})
 
-
-
 # 注册component节点
 rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN rmos_cam_r::DahengCamNode
   EXECUTABLE daheng_camera_r
 )
-
-
 
 install(
         DIRECTORY  ${3RDPARTY_LIB}                   # 发现你项目中的lib中所有的文件

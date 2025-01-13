@@ -23,30 +23,23 @@
 #include <string>
 #include <vector>
 
-
-
 namespace detector {
 
 NumberClassifier::NumberClassifier()
-: threshold(0.6)
+: threshold(0.5)
 {
   net_ = cv::dnn::readNetFromONNX("./src/Algorithm/configure/Detector/classifier/jun2_classifier/model/mlp.onnx");
- ignore_classes_.emplace_back("negative");
+  ignore_classes_.emplace_back("negative");
   std::ifstream label_file("./src/Algorithm/configure/Detector/classifier/jun2_classifier/model/label.txt");
   std::string line;
   while (std::getline(label_file, line)) {
     class_names_.push_back(line);
   }
-
-
-            for (int i = 0; i < 256; i++)
-            {
-                float normalize = (float)(i/255.0);
-                lut[i] = cv::saturate_cast<uchar>(pow(normalize, 0.6) * 255.0f);
-            }
-
-
-
+  for (int i = 0; i < 256; i++)
+  {
+    float normalize = (float)(i/255.0);
+    lut[i] = cv::saturate_cast<uchar>(pow(normalize, 0.6) * 255.0f);
+  }
 }
 
 void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<base::Armor> & armors)
@@ -62,9 +55,12 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<base::Arm
   for (auto & armor : armors) {
     // Warp perspective transform
     cv::Point2f lights_vertices[4] = {
-      armor.left.down, armor.left.up, armor.right.up,
-      armor.right.down};
-//////
+      armor.left.down, 
+      armor.left.up, 
+      armor.right.up,
+      armor.right.down
+    };
+
     const int top_light_y = (warp_height - light_length) / 2 - 1;
     const int bottom_light_y = top_light_y + light_length;
     const int warp_width = armor.type == base::ArmorType::SMALL ? small_armor_width : large_armor_width;
@@ -75,39 +71,29 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<base::Arm
       cv::Point(warp_width - 1, bottom_light_y),
     };
 
+    double box_height_enlarge = 1.0; // 这里的参数暂时先直接放在函数里
+    armor.rect.y -= armor.rect.height / 2.0 * box_height_enlarge;
+    armor.rect.height *= 2.0 * box_height_enlarge;
+    armor.rect &= cv::Rect2d(cv::Point(0, 0), src.size());
+    // temp = image(cv::Rect2d(armor.rect));
+    // for (it = dst.begin<cv::Vec3b>(), end = dst.end<cv::Vec3b>(); it != end; it++)
+    //     {
+    //         (*it)[0] = lut[((*it)[0])];
+    //         (*it)[1] = lut[((*it)[1])];
+    //         (*it)[2] = lut[((*it)[2])];
+    //     }
+   for (int i = armor.rect.x; i < armor.rect.width; i++) {
+    for (int j = armor.rect.y; j < armor.rect.height; j++) {
+      cv::Vec3b vc = src.at<cv::Vec3b>(i, j);
+            vc[0] = lut[(vc[0])];
+            vc[1] = lut[(vc[1])];
+            vc[2] = lut[(vc[2])];
+    }
+   }
 
-
-      double box_height_enlarge = 1.0; // 这里的参数暂时先直接放在函数里
-            armor.rect.y -= armor.rect.height / 2.0 * box_height_enlarge;
-            armor.rect.height *= 2.0 * box_height_enlarge;
-            armor.rect &= cv::Rect2d(cv::Point(0, 0), src.size());
-           // temp = image(cv::Rect2d(armor.rect));
-        // for (it = dst.begin<cv::Vec3b>(), end = dst.end<cv::Vec3b>(); it != end; it++)
-        //     {
-        //         (*it)[0] = lut[((*it)[0])];
-        //         (*it)[1] = lut[((*it)[1])];
-        //         (*it)[2] = lut[((*it)[2])];
-        //     }
-       for (int i = armor.rect.x; i < armor.rect.width; i++) {
-        for (int j = armor.rect.y; j < armor.rect.height; j++) {
-          cv::Vec3b vc = src.at<cv::Vec3b>(i, j);
-                vc[0] = lut[(vc[0])];
-                vc[1] = lut[(vc[1])];
-                vc[2] = lut[(vc[2])];
-        }}
-
-
-
-
-
-
-
-
-
-
-    cv::Mat number_image;
-    auto rotation_matrix = cv::getPerspectiveTransform(lights_vertices, target_vertices);
-    cv::warpPerspective(src, number_image, rotation_matrix, cv::Size(warp_width, warp_height));
+  cv::Mat number_image;
+  auto rotation_matrix = cv::getPerspectiveTransform(lights_vertices, target_vertices);
+  cv::warpPerspective(src, number_image, rotation_matrix, cv::Size(warp_width, warp_height));
 //////////////
     // Get ROI
     number_image =
@@ -126,10 +112,9 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<base::Arm
 //////////////////////////////
     // Set the input blob for the neural network
     net_.setInput(blob);
-std::cout<<"what//////////////////////////////////////////////////////"<<'\n';
+    //std::cout << "what//////////////////////////////////////////////////////" << '\n';
     // Forward pass the image blob through the model
     cv::Mat outputs = net_.forward();
-
 
     // Do softmax
     float max_prob = *std::max_element(outputs.begin<float>(), outputs.end<float>());
@@ -145,7 +130,7 @@ std::cout<<"what//////////////////////////////////////////////////////"<<'\n';
 
     armor.confidence = confidence;
     armor.number = class_names_[label_id];
-    std::cout<<armor.number<<'\n';
+   // std::cout << armor.number << '\n';
     armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
@@ -191,8 +176,7 @@ for (auto & armor : armors) {
       continue;}
 
     }
-    
-  
+
   else if(armor.type==base::ArmorType::SMALL)
   {
     if(armor.number=="3")
@@ -215,12 +199,7 @@ for (auto & armor : armors) {
       continue;}
 
     }
-    
-  
-
-
-
-}
+  }
 }
 
 }  // namespace rm_auto_aim

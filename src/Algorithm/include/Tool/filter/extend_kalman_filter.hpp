@@ -5,7 +5,6 @@
 #ifndef RMOS_EXTEND_KALMAN_FILTER_HPP
 #define RMOS_EXTEND_KALMAN_FILTER_HPP
 
-
 #include <Eigen/Dense>
 #include <functional>
 
@@ -33,8 +32,7 @@ namespace tool
 
         // Update the estimated state based on measurement
         Eigen::MatrixXd update(const Eigen::VectorXd & z);
-        Eigen::MatrixXd update(const Eigen::VectorXd & z,double vyaw);
-
+        Eigen::MatrixXd update(const Eigen::VectorXd & z, double vyaw);
 
     private:
         // Process nonlinear vector function
@@ -78,13 +76,7 @@ namespace tool
         float dvy=0;
     };
 
-
-
-
-
-
-
-     class MoveExtendedKalmanFilter
+    class MoveExtendedKalmanFilter
     {
     public:
         MoveExtendedKalmanFilter() = default;
@@ -143,22 +135,6 @@ namespace tool
         // Posteriori state
         Eigen::VectorXd x_post;
     };
-
-
-
-
-
-    
 }
-
-
-
-
-
-
-
-
-
-
 
 #endif //RMOS_EXTEND_KALMAN_FILTER_HPP

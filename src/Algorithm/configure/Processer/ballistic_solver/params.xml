@@ -4,5 +4,5 @@
     <right_bs>0.80</right_bs>
     <k>0.0402</k>
     <g>9.75</g>
-    <bullet_speed>30</bullet_speed>
+    <bullet_speed>20</bullet_speed>
 </opencv_storage>

@@ -12,12 +12,10 @@ namespace base
 {
     class LightBlob
     {
-
         public:
             LightBlob();
             ~LightBlob(){};
             LightBlob(cv::RotatedRect box);
-
 
             cv::Point2f up;
             cv::Point2f down;
@@ -28,10 +26,8 @@ namespace base
             int matched_count{0};
             float k;
             float angle;
-
-
+            float k_d;
     };
-
 
     class Armor
     {
@@ -39,7 +35,6 @@ namespace base
             Armor();
             Armor(const LightBlob & l1, const LightBlob & l2);
             ~Armor(){};
-
 
             cv::RotatedRect rrect;
             cv::Rect2d rect;
@@ -61,11 +56,7 @@ namespace base
             float k_;
             double yaw;
             cv::Point3f position;
-
     };
-
-
-
-
 }
+
 #endif //RMOS_ARMOR_HPP

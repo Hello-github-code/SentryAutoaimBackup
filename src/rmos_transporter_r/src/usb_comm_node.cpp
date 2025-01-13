@@ -270,14 +270,14 @@ namespace rmos_transporter_r
                 quaternion_time_msg_.quaternion_stamped.quaternion.x = (double)package.q1;
                 quaternion_time_msg_.quaternion_stamped.quaternion.y = (double)package.q2;
                 quaternion_time_msg_.quaternion_stamped.quaternion.z = (double)package.q3;
-               // std::cout<<"q0"<<package.q0<<'\n';
-               // std::cout<<"q1"<<package.q1<<'\n';
-               // std::cout<<"q2"<<package.q2<<'\n';
-               // std::cout<<"q3"<<package.q3<<'\n';
+                // std::cout<<"q0"<<package.q0<<'\n';
+                // std::cout<<"q1"<<package.q1<<'\n';
+                // std::cout<<"q2"<<package.q2<<'\n';
+                // std::cout<<"q3"<<package.q3<<'\n';
                         
                 geometry_msgs::msg::TransformStamped t;
                 t.header.stamp =  quaternion_time_msg_.quaternion_stamped.header.stamp;
-                t.header.frame_id = "world_r"; //注意坐标系
+                t.header.frame_id = "Gimbal_Link"; //注意坐标系
                 t.child_frame_id = "IMU_r";
                 t.transform.rotation.x = quaternion_time_msg_.quaternion_stamped.quaternion.x;
                 t.transform.rotation.y = quaternion_time_msg_.quaternion_stamped.quaternion.y;

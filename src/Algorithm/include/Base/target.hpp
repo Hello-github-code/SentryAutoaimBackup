@@ -9,20 +9,20 @@
 #include "const.hpp"
 #include "armor.hpp"
 
-
 namespace base
 {
-
     struct RoboInfo
     {
         int enemy_color;
         int bullet_speed;
     };
+
     struct Command
     {
         int mode;
         int aim_state;
     };
+
     class Target
     {
     public:
@@ -41,7 +41,6 @@ namespace base
             dz_ = 0;
 
             aiming_point_ = cv::Point3f (0,0,0);
-
         };
 
         int num_id_;
@@ -61,14 +60,6 @@ namespace base
 
         cv::Point3f aiming_point_;
     };
-
-
 }
-
-
-
-
-
-
 
 #endif //RMOS_TARGET_HPP

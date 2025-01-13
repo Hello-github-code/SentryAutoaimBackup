@@ -4,6 +4,5 @@
     <max_match_distance> 0.5 </max_match_distance>
     <max_match_yaw_diff> 0.45 </max_match_yaw_diff>
     <tracking_thres> 2 </tracking_thres>
-    <lost_thres> 6 </lost_thres>
-
+    <lost_thres> 15 </lost_thres>
 </opencv_storage>

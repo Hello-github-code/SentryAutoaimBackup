@@ -5,7 +5,6 @@
 #ifndef RMOS_COMM_NODE_HPP
 #define RMOS_COMM_NODE_HPP
 
-
 #include <memory>
 #include <chrono>
 
@@ -25,10 +24,10 @@
 #include "../../Algorithm/include/Transporter/can/can.hpp"
 #include "../../Algorithm/include/Debug/debug.hpp"
 
-
 namespace rmos_transporter_l
 {
-    class CommNode : public rclcpp::Node{
+    class CommNode : public rclcpp::Node
+    {
     public:
         CommNode(const std::string &node_name, const rclcpp::NodeOptions &options) : Node(node_name, options)
         {
@@ -46,8 +45,8 @@ namespace rmos_transporter_l
         }
 
     protected:
-        rclcpp::Subscription<rmos_interfaces::msg::Target>::SharedPtr target_sub_l_;
-        rclcpp::Subscription<rmos_interfaces::msg::Target>::SharedPtr target_sub_r_;
+        rclcpp::Subscription<geometry_msgs::msg::QuaternionStamped>::SharedPtr target_sub_l_;
+        rclcpp::Subscription<geometry_msgs::msg::QuaternionStamped>::SharedPtr target_sub_r_;
 
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr perception_target_sub_;
 
@@ -65,10 +64,10 @@ namespace rmos_transporter_l
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_publisher_;
 
         std::thread recevie_thread_;
-
     };
 
-    class CanCommNode : public CommNode{
+    class CanCommNode : public CommNode
+    {
     public:
         CanCommNode(const rclcpp::NodeOptions & options);
         ~CanCommNode();
@@ -148,12 +147,10 @@ namespace rmos_transporter_l
         double last_time_r_;
 
         rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr perception_sub_;
-
-      
-
     };
     
-    class UsbCommNode : public CommNode{
+    class UsbCommNode : public CommNode
+    {
     public:
         UsbCommNode(const rclcpp::NodeOptions & options);
         ~UsbCommNode();
@@ -161,12 +158,12 @@ namespace rmos_transporter_l
         /**
          *  @brief  target_sub_的回调函数，将msg转换后通过can发送
          */
-        void targetCallBack(const rmos_interfaces::msg::Target::SharedPtr target);
+        void targetCallBack(const geometry_msgs::msg::QuaternionStamped::SharedPtr quaternion_time_msg_);
 
         /**
          *  @brief  target_sub_的回调函数，将msg转换后通过can发送
          */
-        void othertargetstateCallBack(const rmos_interfaces::msg::Target::SharedPtr target);
+        void othertargetstateCallBack(const geometry_msgs::msg::QuaternionStamped::SharedPtr quaternion_time_msg_);
         /**
          *  @brief  将msg中的自瞄状态信息，转换为字节形式
          */
@@ -181,7 +178,6 @@ namespace rmos_transporter_l
          *  @brief  收到全向感知目标的回调函数
          */
         void perceptionTargetCallBack(const std_msgs::msg::Int16::SharedPtr target);
-
 
         void perception_target2data(const std_msgs::msg::Int16::SharedPtr target, u_char *buf);
 
@@ -204,10 +200,9 @@ namespace rmos_transporter_l
 
         rclcpp::Publisher<rmos_interfaces::msg::QuaternionTime>::SharedPtr quaternion_pub_;
 
-
         /* Send Timer */
         rclcpp::TimerBase::SharedPtr receive_timer_;
-        
+
         // msg
         rmos_interfaces::msg::QuaternionTime quaternion_time_msg_;
         rmos_interfaces::msg::Color color_msg_;
@@ -224,13 +219,10 @@ namespace rmos_transporter_l
         int interface_usb_write_timeout_;
          std::thread recevie_thread_l;
 
-        rclcpp::Subscription<rmos_interfaces::msg::Target>::SharedPtr target_sub_;
+        rclcpp::Subscription<geometry_msgs::msg::QuaternionStamped>::SharedPtr target_sub_;
 
         int perception_yaw_ = 0;
     };
-
-
 }
-
 
 #endif //RMOS_COMM_NODE_HPP

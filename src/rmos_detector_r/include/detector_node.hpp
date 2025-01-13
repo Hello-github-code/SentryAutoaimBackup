@@ -24,14 +24,15 @@
 //interfaces
 #include "rmos_interfaces/msg/armors.hpp"
 #include "rmos_interfaces/msg/armor.hpp"
-#include "rmos_interfaces/msg/color.hpp"
+// #include "rmos_interfaces/msg/color.hpp"
 #include "rmos_interfaces/msg/aimpoint.hpp"
-
+#include "rm2_referee_msgs/msg/robot_status.hpp"
 #include "../../Algorithm/include/Dectector/detector_interfaces/detector_interface.hpp"
 #include "../../Algorithm/include/Dectector/detector/cj_detector/cj_detector.hpp"
 #include "../../Algorithm/include/Dectector/detector/traditional_detector/detector.hpp"
 #include "../../Algorithm/include/Dectector/classifier/cj_classifier/cj_classifier.hpp"
 #include "../../Algorithm/include/Dectector/classifier/onnx_classifier/onnx_classifier.hpp"
+#include "../../Algorithm/include/Dectector/classifier/jun2_classifier/jun2_classifier.hpp"
 #include "../../Algorithm/include/Dectector/solver/pnp_solver/pnp_solver.hpp"
 #include "../../Algorithm/include/Debug/debug.hpp"
 
@@ -51,12 +52,14 @@ namespace rmos_detector_r
 
         std::shared_ptr<image_transport::Subscriber> image_sub_;
         rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
-        rclcpp::Subscription<rmos_interfaces::msg::Color>::SharedPtr color_sub_;
+        // rclcpp::Subscription<rmos_interfaces::msg::Color>::SharedPtr color_sub_;
         rclcpp::Subscription<rmos_interfaces::msg::Aimpoint>::SharedPtr aim_sub_;
-
-
-
-
+        rclcpp::Subscription<rm2_referee_msgs::msg::RobotStatus>::SharedPtr color_sub_;
+        float small_width = 135;
+        float small_height = 57;
+        float big_width = 225;
+        float big_height = 55;
+            
     };
 
     class BasicDetectorNode : public BaseDetectorNode
@@ -94,25 +97,40 @@ namespace rmos_detector_r
 
                                                                                              });
 
-            this->color_sub_ = this->create_subscription<rmos_interfaces::msg::Color>
-                    ("/color_info_r", rclcpp::SensorDataQoS(), [this](rmos_interfaces::msg::Color::ConstSharedPtr color_msg)
-                    {
-                        int enemy_color = (*color_msg).color;
-                        this->detector_->setEnemyColor(enemy_color);
-                    });
-                               this->aim_sub_ = this->create_subscription<rmos_interfaces::msg::Aimpoint>
+            // this->color_sub_ = this->create_subscription<rmos_interfaces::msg::Color>
+            //         ("/color_info_r", rclcpp::SensorDataQoS(), [this](rmos_interfaces::msg::Color::ConstSharedPtr color_msg)
+            //         {
+            //             int enemy_color = (*color_msg).color;
+            //             this->detector_->setEnemyColor(enemy_color);
+            //         });
+            this->aim_sub_ = this->create_subscription<rmos_interfaces::msg::Aimpoint>
                     ("/aim_r", rclcpp::SensorDataQoS(), [this](rmos_interfaces::msg::Aimpoint::ConstSharedPtr aim_msg)
                     {
                        this->aim_point_.x = (*aim_msg).aim_point.x;
-                       this->aim_point_.y = (*aim_msg).aim_point.y;
-
-                       
+                       this->aim_point_.y = (*aim_msg).aim_point.y;           
                     });
+            this->color_sub_ = this->create_subscription<rm2_referee_msgs::msg::RobotStatus>
+                    ("/rm2_referee/robot_status", rclcpp::SensorDataQoS(), [this](rm2_referee_msgs::msg::RobotStatus::ConstSharedPtr robot_status_msg) 
+                    {
+
+                        uint8_t id_ = robot_status_msg->robot_id;
+                        int color_ = 0;
+                        if (id_ < 10) {
+                            color_ = (int) (base::Color::BLUE);
+                        } else if (id_ > 100) {
+                            color_ = (int) base::Color::RED;
+                        } else {
+                            color_ = (int) (base::Color::BLUE);
+                        }
+                        this->detector_->setEnemyColor(color_);
+                    });
+            
+
             // publisher
             this->armors_pub_ = this->create_publisher<rmos_interfaces::msg::Armors>("/rmos_detector/armors_r", rclcpp::SensorDataQoS());
 
             //debug info publisher
-            debug_img_pub_ = image_transport::create_camera_publisher(this, "/debug_image_r", rmw_qos_profile_default);
+            debug_img_pub_ = image_transport::create_camera_publisher(this, "/debug_RGB_image_r", rmw_qos_profile_default);
             debug_bin_img_pub_ = image_transport::create_camera_publisher(this, "/debug_bin_image_r", rmw_qos_profile_default);
 
 
@@ -120,14 +138,11 @@ namespace rmos_detector_r
             detector_ = std::make_shared<detector::Detector>();
             //cj_classifier_ = std::make_shared<detector::CjClassifier>();
             pnp_solver_ = std::make_shared<detector::PnpSolver>();
-            onnx_classifier_ =  std::make_shared<detector::OnnxClassifier>();
-
+            onnx_classifier_ = std::make_shared<detector::OnnxClassifier>();
+            jun2_classfier_ = std::make_shared<detector::NumberClassifier>();
 
             /*publish static TF*/
             this->tf_publisher_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-
-
-
         }
 
     protected:
@@ -138,6 +153,7 @@ namespace rmos_detector_r
 
        // std::shared_ptr<detector::CjClassifier> cj_classifier_;
         std::shared_ptr<detector::OnnxClassifier> onnx_classifier_;
+        std::shared_ptr<detector::NumberClassifier> jun2_classfier_;
 
         std::shared_ptr<detector::PnpSolver> pnp_solver_;
 
@@ -156,12 +172,7 @@ namespace rmos_detector_r
 
         //camera param
         sensor_msgs::msg::CameraInfo camera_info_msg_;
-
-
     };
-
-
 }
-
 
 #endif //RMOS_DETECTOR_NODE_HPP

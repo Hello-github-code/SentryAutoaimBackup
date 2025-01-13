@@ -4,14 +4,12 @@
 
 #include "Base/armor.hpp"
 
-
 namespace base
 {
     LightBlob::LightBlob()
     {
         this->angle = 0;
     }
-
 
     LightBlob::LightBlob(cv::RotatedRect box)
     {
@@ -29,7 +27,7 @@ namespace base
         angle = std::atan2(up.x - down.x, up.y - down.y);
 
         angle = angle / CV_PI * 180;
-        if(angle<0)
+        if (angle < 0)
         {
             angle = -(angle + 180);
         }
@@ -71,5 +69,4 @@ namespace base
         this-> rrect = cv::RotatedRect(center_point, cv::Size(width, height), angle);
         this->rect = cv::Rect2d(center_point - cv::Point2d(width / 2.0, height / 2.0), cv::Size(width, height));
     }
-
 }

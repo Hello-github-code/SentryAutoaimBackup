@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS_RELEASE -Ofast)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPATH=\"\\\"${PROJECT_SOURCE_DIR}\\\"\"")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${CMAKE_SYSTEM_NAME}")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 set(INCLUDES ${INCLUDES} $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 set(INCLUDES ${INCLUDES} $<INSTALL_INTERFACE:/include>)
@@ -58,13 +58,13 @@ install(
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-        PLUGIN rmos_detector_l::BasicDetectorNode
-        EXECUTABLE basic_detector_l
-        )
+  PLUGIN rmos_detector_l::BasicDetectorNode
+  EXECUTABLE basic_detector_l
+)
 
 rclcpp_components_register_node(${PROJECT_NAME}
-PLUGIN rmos_detector_l::MixDetectorNode
-EXECUTABLE mix_detector_l
+  PLUGIN rmos_detector_l::MixDetectorNode
+  EXECUTABLE mix_detector_l
 )
 
 if(BUILD_TESTING)
