@@ -1,0 +1,17 @@
+name: Build Check
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/irobot-algorithm/autoaim/environment:latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build check
+      run: |
+        bash -c "source /opt/ros/humble/setup.bash && source /opt/intel/openvino_2023.0.2/setupvars.sh && colcon build"

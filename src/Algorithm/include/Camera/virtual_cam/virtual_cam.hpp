@@ -15,29 +15,24 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-
 // STD
 #include <cmath>
 #include <string>
 #include <vector>
 #include <iostream>
 
-
 #include "../camera_interfaces/camera_interface.hpp"
-
 
 namespace camera
 {
     class VirtualCam : public CamInterface
     {
     public:
-
         // 打开设备
         bool open(GX_OPEN_PARAM *pOpenParam) override;
 
         // 关闭设备
         bool close() override{};
-
 
         // 设置参数
         bool set_parameter(CamParamType type, int value) override{};
@@ -50,8 +45,6 @@ namespace camera
         {
             return ("Error: " + error_message_);
         }
-
-
 
         // 返回是否打开
         bool is_open() override;
@@ -73,11 +66,5 @@ namespace camera
         cv::VideoCapture capture;
         bool is_open_;
         std::string error_message_; // 错误消息，对外传输
-
-
     };
-
-    }
-
-
-
+}

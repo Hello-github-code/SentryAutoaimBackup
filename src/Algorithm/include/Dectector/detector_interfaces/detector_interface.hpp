@@ -9,7 +9,6 @@
 
 namespace detector
 {
-
     class DetectorInterface
     {
     public:
@@ -22,8 +21,8 @@ namespace detector
             virtual bool setEnemyColor(int enemy_color) = 0;
 
             cv::Mat debug_binary_;
-    private:
 
+    private:
             virtual bool findLights(const cv::Mat & image, std::vector<base::LightBlob>& lights) = 0;
 
             virtual bool isLight(base::LightBlob light) = 0;
@@ -31,14 +30,7 @@ namespace detector
             virtual bool matchLights(std::vector<base::LightBlob>& lights,std::vector<base::Armor>& armors) = 0;
 
             virtual bool isArmor(base::LightBlob light_1,base::LightBlob light_2) = 0;
-
-
-
     };
-
 } // namespace detector
-
-
-
 
 #endif //RMOS_DETECTOR_INTERFACE_HPP

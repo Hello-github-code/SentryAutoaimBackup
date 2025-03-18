@@ -10,7 +10,6 @@
 namespace detector
 {
     class ClassifierInterface{
-
     public:
         virtual bool classifyArmors(const cv::Mat &image,std::vector<base::Armor>& armors) = 0;
     private:
@@ -18,6 +17,5 @@ namespace detector
     };
 
 } // namespace detector
-
 
 #endif //RMOS_CLASSFIER_INTERFACE_HPP

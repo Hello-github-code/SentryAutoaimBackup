@@ -5,8 +5,6 @@
 #ifndef RMOS_CJ_CLASSIFIER_HPP
 #define RMOS_CJ_CLASSIFIER_HPP
 
-
-
 // OpenCV
 #include <opencv2/opencv.hpp>
 
@@ -38,13 +36,9 @@ namespace detector
             threshold_ = 0.7;
             ignore_classes_.emplace_back("base");
             ignore_classes_.emplace_back("negative");
-
-
-
         }
 
         bool classifyArmors(const cv::Mat &image,std::vector<base::Armor>& armors) override;
-
 
     private:
         int classifyArmor(const cv::Mat &num_roi,double& confidence) override;
@@ -53,15 +47,7 @@ namespace detector
         std::vector<std::string> class_names_;
         std::vector<std::string> ignore_classes_;
         double threshold_;
-
-
-
     };
 }
-
-
-
-
-
 
 #endif //RMOS_CJ_CLASSIFIER_HPP

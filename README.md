@@ -1,6 +1,6 @@
 # RMOS_DDS
-- 2025 双云台哨兵自瞄代码
-- 2025.1.13 
+- 2025 单/双云台哨兵自瞄代码
+- 2025.3.18
 ## 环境配置
     -ros2-humble
     -opencv4.4.0
@@ -19,8 +19,6 @@
 `source install/setup.bash`
 - 传统识别
 `ros2 launch rmos_bringup normal_aim.launch.py`
-- 深度学习+传统 识别
-`ros2 launch rmos_bringup mix_aim.launch.py`
 
 ## 切换相机
 - 使用sn码(serial number)打开指定的相机，若要更换相机，先通过大恒相机驱动，查看sn码及控制模式（control）

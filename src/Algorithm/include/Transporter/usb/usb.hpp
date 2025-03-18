@@ -20,9 +20,9 @@
 #define RMOS_IMU_1_RECEIVE_ID 0x6
 #define RMOS_0_SEND_ID 0x7
 #define RMOS_1_SEND_ID 0x8
+
 namespace transporter
 {
-
 
 typedef signed char     int8_t;
 typedef unsigned char   uint8_t;
@@ -30,7 +30,6 @@ typedef signed short    int16_t;
 typedef unsigned short  uint16_t;
 typedef signed int      int32_t;
 typedef unsigned int    uint32_t;
-
 
 #pragma pack(push, 1)
 
@@ -152,8 +151,4 @@ typedef struct
 
 } // namespace transporter
 
-
 #endif
-
-
-

@@ -13,12 +13,8 @@ namespace detector
 
     public:
         virtual bool solveArmorPose(const base::Armor& armor,const cv::Mat& camera_matrix,const cv::Mat& dist_coeffs,cv::Mat &tVec, cv::Mat &rVec) = 0;
-
     };
 
 } // namespace detector
-
-
-
 
 #endif //RMOS_SOLVER_INTERFACE_HPP

@@ -16,10 +16,14 @@
     <r_ryaw> 0.000036 </r_ryaw> <!--0.001-->
     <r_a_xy> 0.09 </r_a_xy> <!--9e-3-->
 
-    <delay> 0.185 </delay>
-    <true_x> 660 </true_x> <!--665-->
+    <odelay> 0.170 </odelay>
 
-    <gun_pitch_offset> -2.5 </gun_pitch_offset> <!-- -0.5 -->
-    <gun_yaw_offset> 0.93 </gun_yaw_offset> <!-- 0.93 -->
+    <delay> 0.185 </delay>
+    <true_x> 600 </true_x> <!--665-->
+
+    <gun_pitch_offset> -2.0 </gun_pitch_offset> <!-- -0.5 -->
+    <gun_yaw_offset> -0.9 </gun_yaw_offset> <!-- 0.93 -->
+
+    <predict_factor> -0.8 </predict_factor>
 
 </opencv_storage>

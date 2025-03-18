@@ -50,41 +50,38 @@ namespace detector
             armor.confidence = confidence;
 
             cv::imshow("2",number_image);
-
         }
 
+        armors.erase(
+        std::remove_if(
+            armors.begin(), armors.end(),
+            [this](const base::Armor & armor) {
+                if (armor.confidence < threshold_) {
+                    return true;
+                }
 
-               armors.erase(
-                std::remove_if(
-                        armors.begin(), armors.end(),
-                        [this](const base::Armor & armor) {
-                            if (armor.confidence < threshold_) {
-                                return true;
-                            }
+                for (const auto & ignore_class : ignore_classes_) {
+                    if (armor.number == ignore_class) {
+                        return true;
+                    }
+                }
 
-                            for (const auto & ignore_class : ignore_classes_) {
-                                if (armor.number == ignore_class) {
-                                    return true;
-                                }
-                            }
+                bool mismatch_armor_type = false;
+                if (armor.type == base::BIG) {
+                    mismatch_armor_type = armor.number == "outpost" || armor.number == "2" || armor.number == "guard";
+                } else if (armor.type == base::SMALL) {
+                    mismatch_armor_type = armor.number == "1" || armor.number == "base";
+                }
 
-                            bool mismatch_armor_type = false;
-                            if (armor.type == base::BIG) {
-                                mismatch_armor_type =
-                                        armor.number == "outpost" || armor.number == "2" || armor.number == "guard";
-                            } else if (armor.type == base::SMALL) {
-                                mismatch_armor_type = armor.number == "1" || armor.number == "base";
-                            }
-                            return mismatch_armor_type;
-                        }),
-                armors.end());
+            return mismatch_armor_type;
+            }),
+        armors.end());
 
         return true;
     }
 
     int CjClassifier::classifyArmor(const cv::Mat &num_roi, double &confidence)
     {
-
         cv::Mat number_image = num_roi.clone();
         // Normalize
         number_image = number_image / 255.0;
@@ -105,13 +102,10 @@ namespace detector
         float sum = static_cast<float>(cv::sum(softmax_prob)[0]);
         softmax_prob /= sum;
 
-
         cv::Point class_id_point;
         minMaxLoc(softmax_prob.reshape(1, 1), nullptr, &confidence, nullptr, &class_id_point);
         int label_id = class_id_point.x;
 
         return label_id;
-
-
     }
 }

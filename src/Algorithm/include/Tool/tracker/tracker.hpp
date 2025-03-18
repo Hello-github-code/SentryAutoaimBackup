@@ -14,6 +14,7 @@
 // STD
 #include <memory>
 #include <iostream>
+#include <queue>
 
 #include "Base/armor.hpp"
 #include "Tool/filter/extend_kalman_filter.hpp"
@@ -67,6 +68,9 @@ namespace tool
         Eigen::Vector3d last_p;
         int outpost_x;
         int outpost_y;
+
+        std::queue<float> dz_buff;
+        float dz_total = 0;
 
         void initEKF(const base::Armor & a);
         void handleArmorJump(const base::Armor & a);

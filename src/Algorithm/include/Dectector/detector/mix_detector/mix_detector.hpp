@@ -31,7 +31,6 @@ namespace MixDetect
         int enemy_color = 1;
         void loadParam(const std::string &filename="./src/Algorithm/configure/Detector/detector/mix_detector/ArmorBox.xml")
         {
-
             cv::FileStorage fs(filename, cv::FileStorage::READ);
             if (!fs.isOpened())
             {
@@ -53,7 +52,6 @@ namespace MixDetect
 
     namespace Tool
     {
-
         inline double getRotateRectAngle(const cv::RotatedRect &rect)
         {
             return rect.size.height > rect.size.width ? -1 * abs(rect.angle) : (rect.angle + 90);
@@ -220,7 +218,6 @@ namespace MixDetect
 
     typedef std::vector<ArmorBox> ArmorBoxes;
 
-
     class ArmorDetector
     {
     private:
@@ -233,7 +230,6 @@ namespace MixDetect
 
         cv::Point2d _offset;
         cv::Mat roi;
-
 
         // bool findLightBlobs(LightBlobs &light_blobs);
 
@@ -254,7 +250,6 @@ namespace MixDetect
 
         ArmorDetector(ArmorParam &param);
         ArmorDetector();
-        
 
         ~ArmorDetector() = default;
         

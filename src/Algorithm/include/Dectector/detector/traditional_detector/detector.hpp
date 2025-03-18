@@ -22,10 +22,8 @@
 #include "../../../Base/armor.hpp"
 #include "../../detector_interfaces/detector_interface.hpp"
 
-
 namespace detector
 {
-
     struct ProcessParams
     {
         double blue_threshold;
@@ -33,7 +31,6 @@ namespace detector
         double blue_red_diff;
         double red_blue_diff;
         int enemy_color;
-
     };
 
     struct LightParams
@@ -41,7 +38,6 @@ namespace detector
         double angle_to_vertigal_max;
         double height_width_min_ratio;
         double size_area_min_ratio;
-
     };
 
     struct ArmorParams
@@ -55,35 +51,28 @@ namespace detector
         double inside_thresh;
     };
 
-
     // 输入图像为BGR
     class Detector : public DetectorInterface
     {
     public:
-
         explicit Detector();
         ~Detector();
         bool detectArmors(const cv::Mat & image, std::vector<base::Armor>& armors) override;
         bool setEnemyColor(int enemy_color) override;
+
+        cv::Mat src_;
+
     private:
         bool findLights(const cv::Mat & image, std::vector<base::LightBlob>& lights) override;
         bool isLight(base::LightBlob light) override;
         bool matchLights(std::vector<base::LightBlob>& lights,std::vector<base::Armor>& armors) override;
         bool isArmor(base::LightBlob light_1,base::LightBlob light_2) override;
 
-
-
-
         ProcessParams process_params_;
         LightParams light_params_;
         ArmorParams armor_params_;
         base::Color enemy_color_;
-    public:
-        cv::Mat src_;
-
-
     };
-
 }
 
 #endif //RMOS_DETECTOR_HPP

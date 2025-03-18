@@ -5,7 +5,6 @@
 #ifndef RMOS_CAN_HPP
 #define RMOS_CAN_HPP
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +18,6 @@
 #include <fcntl.h>
 #include <chrono>
 #include <iostream>
-
 
 #include "../../Base/target.hpp"
 #include "../../Base/armor.hpp"
@@ -48,14 +46,10 @@
 #define ROBOT_RECEIVE_ID 0x129       // 机器人状态信息ID
 #define COMPETITION_RECEVIE_ID 0x12B // 比赛信息ID
 
-
 namespace transporter
 {
-
     class Can
     {
-
-
     private:
         int socket_fd;
         struct sockaddr_can addr;
@@ -89,15 +83,6 @@ namespace transporter
             TIME_ERROR
         };
     };
-
-
 }
-
-
-
-
-
-
-
 
 #endif //RMOS_CAN_HPP

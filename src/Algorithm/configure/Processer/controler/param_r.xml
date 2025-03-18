@@ -19,9 +19,11 @@
     <odelay> 0.170 </odelay>
 
     <delay> 0.07 </delay>
-    <true_x> 670 </true_x> <!--665-->
+    <true_x> 650 </true_x> <!--665-->
 
-    <gun_pitch_offset> -1.48 </gun_pitch_offset> <!-- -0.5 -->
-    <gun_yaw_offset> 0.63 </gun_yaw_offset> <!-- 0.93 -->
+    <gun_pitch_offset> -2.9 </gun_pitch_offset> <!-- -0.5 -->
+    <gun_yaw_offset> 0.28 </gun_yaw_offset> <!-- 0.93 -->
+
+    <predict_factor> -0.8 </predict_factor>
 
 </opencv_storage>

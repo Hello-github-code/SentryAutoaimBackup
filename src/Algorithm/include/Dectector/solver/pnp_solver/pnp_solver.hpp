@@ -22,7 +22,6 @@
 #include "../../../Base/armor.hpp"
 #include "../../detector_interfaces/solver_interface.hpp"
 
-
 namespace detector
 {
     class PnpSolver : public SolverInterface
@@ -52,9 +51,7 @@ namespace detector
         std::vector<cv::Point3f> small_armor;
         std::vector<cv::Point3f> big_armor;
         std::vector<cv::Point3f> rune_armor; //TO DO
-
     };
-
-
 }
+
 #endif //RMOS_PNP_SOLVER_HPP

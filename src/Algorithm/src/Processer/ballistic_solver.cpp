@@ -25,10 +25,10 @@ namespace processer
 
     cv::Point3f BallisticSolver::getAngleTimel(cv::Point3f position)
     {
-        this->setBS_coeff_l(position);
+        // this->setBS_coeff_l(position);
         double dy, angle, y_actual;
         double t_actual = 0.0;
-        double y_temp = position.z / 1000.0 + 0.094;
+        double y_temp = position.z / 1000.0 + 0.094;    // 需要加上相机到枪口的距离
         double y = y_temp;
         double x = sqrt(position.x * position.x + position.y * position.y) / 1000.0;
         // std::cout << "bsr = " << this->bullet_speed_ <<' '<<this->ballistic_param_.g<< '\n';
@@ -56,10 +56,10 @@ namespace processer
     
     cv::Point3f BallisticSolver::getAngleTimer(cv::Point3f position)
     {
-        this->setBS_coeff_r(position);
+        // this->setBS_coeff_r(position);
         double dy, angle, y_actual;
         double t_actual = 0.0;
-        double y_temp = position.z / 1000.0 + 0.094;
+        double y_temp = position.z / 1000.0 + 0.094;    // 需要加上相机到枪口的距离
         double y = y_temp;
         double x = sqrt(position.x * position.x + position.y * position.y) / 1000.0;
         // std::cout << "bsr = " << this->bullet_speed_ <<' '<<this->ballistic_param_.g<< '\n';

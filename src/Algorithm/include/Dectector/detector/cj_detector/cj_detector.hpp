@@ -22,7 +22,6 @@
 #include "../../../Base/armor.hpp"
 #include "../../detector_interfaces/detector_interface.hpp"
 
-
 namespace detector
 {
     struct ProcessParamsCj
@@ -52,35 +51,26 @@ namespace detector
         double armor_max_angle;
     };
 
-
-
-
-
-    class CjDetector : public DetectorInterface{
-
-
-
-
+    class CjDetector : public DetectorInterface
+    {
     public:
-
         explicit CjDetector();
         ~CjDetector();
         bool detectArmors(const cv::Mat & image, std::vector<base::Armor>& armors) override;
         bool setEnemyColor(int enemy_color) override;
+
+        cv::Mat src_;
+
     private:
         bool findLights(const cv::Mat & image, std::vector<base::LightBlob>& lights) override;
         bool isLight(base::LightBlob light) override;
         bool matchLights(std::vector<base::LightBlob>& lights,std::vector<base::Armor>& armors) override;
         bool isArmor(base::LightBlob light_1,base::LightBlob light_2) override;
 
-
         ProcessParamsCj process_params_;
         LightParamsCj light_params_;
         ArmorParamsCj armor_params_;
         base::Color enemy_color_;
-    public:
-        cv::Mat src_;
-
     };
 }
 #endif //RMOS_DETECTOR_HPP

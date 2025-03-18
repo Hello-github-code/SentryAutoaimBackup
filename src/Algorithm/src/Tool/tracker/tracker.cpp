@@ -286,7 +286,7 @@ namespace tool
         if (abs(move_target_state(5)) > 0)
             move_target_state(5) = 0;
         
-        move_target_state(7) = 0.18;
+        // move_target_state(7) = 0.18;
         moveekf.setState(move_target_state);
         rotateekf.setState(rotate_target_state);
         accelerateekf.setState(accelerate_target_state);
@@ -340,7 +340,7 @@ namespace tool
 
         // Set initial position at 0.26m behind the target
         move_target_state = Eigen::VectorXd::Zero(8);
-        double r = 0.25;
+        double r = 0.21;
         double xc = xa + r * cos(yaw);
         double yc = ya + r * sin(yaw);
         double zc = za;
@@ -369,7 +369,32 @@ namespace tool
         } else if (tracked_id == 7) {
             armors_num = 3;
         } else {
-            dz = a.position.z - move_target_state(4);
+            dz = 7 / 12 * (a.position.z - move_target_state(4));
+
+            float dz_abs = abs(dz);
+
+            if (dz_buff.empty()) {
+                dz_buff.push(dz_abs);
+                dz_total += dz_abs;
+            }
+            else if (dz_abs != dz_buff.back()) {
+                dz_buff.push(dz_abs);
+                dz_total += dz_abs;
+            }
+
+            if (dz_buff.size() > 20) {
+                dz_total -= dz_buff.front();
+                dz_buff.pop();
+            }
+
+            if (!dz_buff.empty())
+                dz_abs = dz_total / dz_buff.size();
+
+            if (dz > 0) {
+                dz = dz_abs;
+            } else {
+                dz = -dz_abs;
+            }
         }
 
         cv::Point3d armor_positions[armors_num];               // 存储同一辆车上所有装甲板的位置
