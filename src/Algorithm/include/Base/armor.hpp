@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-6-14.
-//
-
 #ifndef RMOS_ARMOR_HPP
 #define RMOS_ARMOR_HPP
 

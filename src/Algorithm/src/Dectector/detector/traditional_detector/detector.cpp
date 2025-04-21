@@ -1,7 +1,3 @@
-//
-// Created by nuc12 on 23-6-23.
-//
-
 #include "Dectector/detector/traditional_detector/detector.hpp"
 
 namespace detector
@@ -51,34 +47,11 @@ namespace detector
         std::vector<base::LightBlob> lights;
         bool is_find_lights = this->findLights(image, lights);
         bool is_find_armors = false;
-        if (is_find_lights)
-        {
+        if (is_find_lights) {
             is_find_armors = this->matchLights(lights, armors);
-        }
-        else
-        {
+        } else {
             is_find_armors = false;
         }
-
-//        if(is_find_lights)
-//        {
-//            for(auto &light : lights)
-//            {
-//                cv::line(src_,light.up,light.down ,cv::Scalar(0, 100, 0),5);
-//            }
-//
-//        }
-//        if(is_find_armors)
-//        {
-//            for(auto &armor : armors)
-//            {
-//                cv::line(src_,armor.left.up,armor.right.down ,cv::Scalar(255, 0, 255),2);
-//                cv::line(src_,armor.left.down,armor.right.up ,cv::Scalar(255, 0, 255),2);
-//            }
-//        }
-//
-//        cv::imshow("src",src_);
-//        cv::waitKey(1);
         return true;
     }
 
@@ -87,46 +60,40 @@ namespace detector
         lights.clear();
         cv::Mat gaussian;
         cv::Mat gray;
-        cv::Mat binary=cv::Mat(720,1280,CV_8U,cv::Scalar::all(0));
+        cv::Mat binary = cv::Mat(720, 1280, CV_8U, cv::Scalar::all(0));
         cvtColor(image, gray, cv::COLOR_BGR2GRAY);
 
-        for (int i = 0; i<4; i++)
-       {
-         for (int j = 0; j<4; j++)
-        {
-          cv::Mat roi_img, ori_img;
-          cv::Rect rect(j * 1280 / 4, i * 720 / 4, 1280 / 4, 720 / 4);
-          gray(rect).copyTo(roi_img);
-          if (cv::countNonZero(roi_img - 0) != 0)
-        {     
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                cv::Mat roi_img, ori_img;
+                cv::Rect rect(j * 1280 / 4, i * 720 / 4, 1280 / 4, 720 / 4);
+                gray(rect).copyTo(roi_img);
+                if (cv::countNonZero(roi_img - 0) != 0) {     
+                    image(rect).copyTo(ori_img);
+                    std::vector<cv::Mat> bgr;
+                    split(ori_img, bgr);
+                    cv::Mat gray_binary, color_binary, temp_binary;
 
-             image(rect).copyTo(ori_img);
-             std::vector<cv::Mat> bgr;
-             split(ori_img, bgr);
-             cv::Mat gray_binary, color_binary, temp_binary;
+                    if (enemy_color_ == base::RED) {
+                        threshold(roi_img, gray_binary, process_params_.red_threshold, 255, cv::THRESH_BINARY);
+                        subtract(bgr[2], bgr[0], color_binary);
+                        threshold(color_binary, color_binary, process_params_.red_blue_diff, 255, cv::THRESH_BINARY);
+                        temp_binary = gray_binary & color_binary;
+                    } else {
+                        threshold(roi_img, gray_binary, process_params_.blue_threshold, 255, cv::THRESH_BINARY);
+                        cv::subtract(bgr[0], bgr[2], color_binary);
+                        threshold(color_binary, color_binary, process_params_.blue_red_diff, 255, cv::THRESH_BINARY);
+                        temp_binary = gray_binary & color_binary;
+                    }
 
-             if (enemy_color_ == base::RED)
-            {
-            threshold(roi_img, gray_binary, process_params_.red_threshold, 255, cv::THRESH_BINARY);
-            subtract(bgr[2], bgr[0], color_binary);
-            threshold(color_binary, color_binary, process_params_.red_blue_diff, 255, cv::THRESH_BINARY);
-            temp_binary = gray_binary & color_binary;
+                    temp_binary.copyTo(binary(cv::Rect(j*1280/4,  i*720/4, 1280/4, 720/4)));
+                }
             }
+        }
 
-             else
-            {
-            threshold(roi_img, gray_binary, process_params_.blue_threshold, 255, cv::THRESH_BINARY);
-            cv::subtract(bgr[0], bgr[2], color_binary);
-            threshold(color_binary, color_binary, process_params_.blue_red_diff, 255, cv::THRESH_BINARY);
-            temp_binary = gray_binary & color_binary;
-            }
-
-            temp_binary.copyTo(binary(cv::Rect(j*1280/4,  i*720/4, 1280/4, 720/4)));
-         }
-    }
-  }
         cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
         cv::morphologyEx(binary, binary, cv::MORPH_CLOSE, element);
+
         /*-----------寻找并筛选灯条轮廓-----------*/
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(binary, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
@@ -137,18 +104,17 @@ namespace detector
                continue;
 
             cv::RotatedRect light_rrect = cv::minAreaRect(contour);
-            if (cv::contourArea(contour) / light_rrect.size.area() < light_params_.size_area_min_ratio)
-            {
+            if (cv::contourArea(contour) / light_rrect.size.area() < light_params_.size_area_min_ratio) {
                 continue;
             }
-            base::LightBlob  light(light_rrect);
+            base::LightBlob light(light_rrect);
 
             auto b_rect = cv::boundingRect(contour);
             auto r_rect = cv::minAreaRect(contour);
             cv::Mat mask = cv::Mat::zeros(b_rect.size(), CV_8UC1);
             std::vector<cv::Point> mask_contour;
             for (const auto & p : contour) {
-            mask_contour.emplace_back(p - cv::Point(b_rect.x, b_rect.y));
+                mask_contour.emplace_back(p - cv::Point(b_rect.x, b_rect.y));
             }
             cv::fillPoly(mask, {mask_contour}, 255);
             std::vector<cv::Point> points;
@@ -159,31 +125,26 @@ namespace detector
             cv::Point2f top, bottom;
             double angle_k;
             if (int(return_param[0] * 100) == 100 || int(return_param[1] * 100) == 0) {
-            top = cv::Point2f(b_rect.x + b_rect.width / 2, b_rect.y);
-            bottom = cv::Point2f(b_rect.x + b_rect.width / 2, b_rect.y + b_rect.height);
-            angle_k = 0;
+                top = cv::Point2f(b_rect.x + b_rect.width / 2, b_rect.y);
+                bottom = cv::Point2f(b_rect.x + b_rect.width / 2, b_rect.y + b_rect.height);
+                angle_k = 0;
             } else {
-            auto k = return_param[1] / return_param[0];
-            light.k_d=atan(k)/3.1415926*180;
-            auto b = (return_param[3] + b_rect.y) - k * (return_param[2] + b_rect.x);
-            top = cv::Point2f((b_rect.y - b) / k, b_rect.y);
-            bottom = cv::Point2f((b_rect.y + b_rect.height - b) / k, b_rect.y + b_rect.height); 
+                auto k = return_param[1] / return_param[0];
+                light.k_d = atan(k) / M_PI * 180;
+                auto b = (return_param[3] + b_rect.y) - k * (return_param[2] + b_rect.x);
+                top = cv::Point2f((b_rect.y - b) / k, b_rect.y);
+                bottom = cv::Point2f((b_rect.y + b_rect.height - b) / k, b_rect.y + b_rect.height); 
             }
             light.up = top;
             light.down = bottom;
-            light.k=abs(top.x-bottom.x);
+            light.k = abs(top.x - bottom.x);
            
-
-      //      std::cout<<top.x<<" ??? "<<bottom.x<<"dd   "<< light.k<<'\n';
-
-            if (isLight(light))
-            {
+            if (isLight(light)) {
                 lights.push_back(light);
             }
-
         }
-        if (lights.size() < 2)
-        {
+
+        if (lights.size() < 2) {
             return false;
         }
 

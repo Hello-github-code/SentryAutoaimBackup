@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-7-16.
-//
-
 #include "Processer/controler.hpp"
 
 namespace processer
@@ -2284,12 +2280,12 @@ namespace processer
                         gun_next_point = gun_next_point_2;
                     }
 
-                    // aiming_point = p[min_dis_point_index];
                     // aiming_point = p_predict_center;
                     aiming_point = next_point;
+                    // gun_point = p_predict_center;
                     gun_point = gun_next_point;
 
-                    aim2_point = next_point;
+                    aim2_point = p_predict_center;
 
                     return 1;
                 }
@@ -2362,14 +2358,25 @@ namespace processer
             // std::cout << "x  is   " << x << std::endl;
 
         aim_point_2d_out = aim_point_2d;
+
         double fire_area = abs(110 / v_yaw);
-        if (abs(v_yaw) == 2.512)
+        if (abs(v_yaw) == 2.512) {
             fire_area = camera_matrix_.at<double>(0, 0) * 50 / aiming_point_camera.z;
-        else
+        } else {
             fire_area = camera_matrix_.at<double>(0, 0) * 100 / aiming_point_camera.z;
-        if (id == 1 || id == 11 || id == 12 || id == 13)
+            if (v_yaw > 6) {
+                fire_area = abs(110 / v_yaw);
+            }
+        }
+
+        if (id == 1 || id == 11 || id == 12 || id == 13) {
             fire_area = camera_matrix_.at<double>(0, 0) * 140 / aiming_point_camera.z;
-        // std::cout << "v_yaw is " << v_yaw << std::endl;                  
+            if (v_yaw > 6) {
+                fire_area = abs(110 / v_yaw) * 1.4;
+            }
+        }
+
+        // std::cout << "v_yaw is " << v_yaw << std::endl;
         // std::cout << "fire_area is " << fire_area << std::endl;
 
         if (fire_area < 5) {

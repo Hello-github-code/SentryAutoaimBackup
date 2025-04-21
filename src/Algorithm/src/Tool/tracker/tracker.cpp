@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-7-15.
-//
-
 #include "Tool/tracker/tracker.hpp"
 
 namespace tool
@@ -64,7 +60,8 @@ namespace tool
         move_target_state = move_ekf_prediction;
         rotate_target_state = rotate_ekf_prediction;
         accelerate_target_state = accelerate_ekf_prediction;
-        // std::cout << "laleyaw = " << rotate_target_state(0) << '\n';
+
+        this->last_yaw_ = move_target_state(6);
 
         int same_id_armors_count = 0;
         double center_x_diff = 0;
@@ -124,7 +121,7 @@ namespace tool
                 // std::cout << "jump = " << same_id_armor.yaw / 3.1415926 * 180 <<" with vyaw = " << rotate_target_state(1) << '\n';
 
                 handleArmorJump(same_id_armor);
-                this->last_yaw_ = same_id_armor.yaw; 
+                this->last_yaw_ = move_target_state(6);
                 this->last_center_x = same_id_armor.center_point.x;
             }
             else if (min_position_diff < 10 * max_match_distance_ && abs(yaw_diff) < CV_PI) {
@@ -135,25 +132,19 @@ namespace tool
                 // Update EKF
                 auto p = tracked_armor.position;
                 double measured_yaw = tracked_armor.yaw;
-                move_measurement = Eigen::Vector4d(p.x, p.y, p.z, measured_yaw);
-                
+
                 Eigen::VectorXd m_yaw(1);
                 m_yaw << measured_yaw;
                 rotate_measurement = m_yaw;
-                // std::cout << "match = " << m_yaw / 3.1415926 * 180 << " with vyaw = " << rotate_target_state(1) << '\n';
+                rotate_target_state = rotateekf.update(rotate_measurement);
+
+                move_measurement = Eigen::Vector4d(p.x, p.y, p.z, measured_yaw);
+                move_target_state = moveekf.update(move_measurement, rotate_target_state(1));
 
                 accelerate_measurement = Eigen::Vector2d(move_target_state(1), move_target_state(3));
-
-                move_target_state = moveekf.update(move_measurement, move_target_state(1));
-                // std::cout<<"update with"<<p.x<<" "<< p.y<<'\n';
-
-                rotate_target_state = rotateekf.update(rotate_measurement);
-                // std::cout<<"v_yawm="<<rotate_target_state(1)<<'\n';
-
                 accelerate_target_state = accelerateekf.update(accelerate_measurement);
 
-                this->last_yaw_ = tracked_armor.yaw;
-                // std::cout << "match" << '\n';
+                this->last_yaw_ = move_target_state(6);
                 this->last_center_x = tracked_armor.center_point.x;
             }
             else
@@ -221,7 +212,7 @@ namespace tool
                 rotate_target_state(1) = 2.512;
                 outpost_direction_ = 1;
             }
-            else if(rotate_target_state(1) < -0.2 && outpost_direction == -1)
+            else if (rotate_target_state(1) < -0.2 && outpost_direction == -1)
             {
                 rotate_target_state(1) = -2.512;
                 outpost_direction_ = -1;
@@ -243,7 +234,7 @@ namespace tool
                 outpost_direction_ = -1;
             }
 
-            move_target_state(7) = 0.2512;
+            move_target_state(7) = 0.2712;
             move_target_state(1) = 0;
             move_target_state(3) = 0;
             move_target_state(5) = 0;
@@ -336,9 +327,8 @@ namespace tool
         double ya = a.position.y;
         double za = a.position.z;
         double yaw = a.yaw;
-        last_yaw_ = a.yaw;
+        this->last_yaw_ = a.yaw;
 
-        // Set initial position at 0.26m behind the target
         move_target_state = Eigen::VectorXd::Zero(8);
         double r = 0.21;
         double xc = xa + r * cos(yaw);
@@ -360,7 +350,7 @@ namespace tool
         accelerateekf.setState(accelerate_measurement);
     }
 
-    void Tracker::handleArmorJump(const base::Armor & a)
+    void Tracker::handleArmorJump(const base::Armor &a)
     {
         // 装甲板数量
         int armors_num = 4;
@@ -394,6 +384,22 @@ namespace tool
                 dz = dz_abs;
             } else {
                 dz = -dz_abs;
+            }
+
+            if (rotate_target_state(1) > 0 && sin(a.yaw) != 0) {
+                move_target_state(7) = ( (a.position.y - move_target_state(2)) * cos(a.yaw) / sin(a.yaw) + move_target_state(0) - a.position.x ) / 
+                                    ( sin(move_target_state(6)) * cos(a.yaw) / sin(a.yaw) - cos(move_target_state(6)) );
+
+                this->another_r = ( (move_target_state(0) - a.position.x) * sin(move_target_state(6)) / cos(move_target_state(6)) + a.position.y - move_target_state(2) ) / 
+                                    ( cos(a.yaw) * sin(move_target_state(6)) / cos(move_target_state(6)) - sin(a.yaw) );
+            }
+
+            if (rotate_target_state(1) < 0 && cos(a.yaw) != 0) {
+                move_target_state(7) = ( (a.position.x - move_target_state(0)) * sin(a.yaw) / cos(a.yaw) + move_target_state(2) - a.position.y ) / 
+                                    ( cos(move_target_state(6)) * sin(a.yaw) / cos(a.yaw) - sin(move_target_state(6)) );
+
+                this->another_r = ( (move_target_state(2) - a.position.y) * cos(move_target_state(6)) / sin(move_target_state(6)) + a.position.x - move_target_state(0) ) / 
+                                    ( sin(a.yaw) * cos(move_target_state(6)) / sin(move_target_state(6)) - cos(a.yaw) );
             }
         }
 
@@ -477,13 +483,13 @@ namespace tool
 
             accelerate_measurement = Eigen::Vector2d(move_target_state(1), move_target_state(3));
 
-            moveekf.setState(move_target_state);
-            moveekf.predict(rotate_target_state(1));
-            move_target_state = moveekf.update(move_measurement, move_target_state(1));
-
             rotateekf.setState(rotate_target_state);
             rotateekf.predict();
             rotate_target_state = rotateekf.update(rotate_measurement);
+
+            moveekf.setState(move_target_state);
+            moveekf.predict(rotate_target_state(1));
+            move_target_state = moveekf.update(move_measurement, rotate_target_state(1));
 
             accelerateekf.setState(accelerate_target_state);
             accelerateekf.predict();

@@ -1,0 +1,12 @@
+[Unit]
+After=network.target
+
+[Service]
+Environment="ROS_HOME=/home/nuc12/Desktop/sentry_autoaim"
+Type=simple
+User=root
+ExecStart=/bin/bash -c "echo \"nuc\" | sudo -S /home/nuc12/Desktop/sentry_autoaim/launch.sh"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

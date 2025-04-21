@@ -1,21 +1,17 @@
-//
-// Created by Wang on 23-6-14.
-//
-
 #ifndef RMOS_CAM_NODE_HPP
 #define RMOS_CAM_NODE_HPP
 
-//std
+// std
 #include <string>
 #include <memory>
 #include <thread>
 #include <mutex>
 #include <chrono>
 
-//other
+// other
 #include <opencv2/core.hpp>
 
-//ros
+// ros
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/publisher.hpp>
@@ -54,41 +50,43 @@ namespace rmos_cam
 
     class DahengCamNode : public virtual CamNode
     {
-    public:
-        DahengCamNode(const rclcpp::NodeOptions & options);
-        ~DahengCamNode();
-    protected:
-        bool is_left_;              // 添加标志位
+        public:
+            DahengCamNode(const rclcpp::NodeOptions & options);
+            ~DahengCamNode();
 
-        std::shared_ptr<camera::DahengCam> cam_dev_;
-        std::thread capture_thread_;                    // 采图线程
-        GX_OPEN_PARAM open_param_;
-        rclcpp::Subscription<rmos_interfaces::msg::Target>::SharedPtr target_sub_;
-        rclcpp::CallbackGroup::SharedPtr target_sub_callback_group_;
-        int last_target_mode_=0;
-        unsigned char lut[256];
-        void TargetCallBack(const rmos_interfaces::msg::Target::SharedPtr target);
-        void gamma(const cv::Mat & src, cv::Mat &dst)
-        {
-            src.copyTo(dst);
-            cv::MatIterator_<cv::Vec3b> it,end;
-            for (it = dst.begin<cv::Vec3b>(), end = dst.end<cv::Vec3b>(); it != end; it++)
+        protected:
+            bool is_left_;              // 添加标志位
+
+            std::shared_ptr<camera::DahengCam> cam_dev_;
+            std::thread capture_thread_;                    // 采图线程
+            GX_OPEN_PARAM open_param_;
+            rclcpp::Subscription<rmos_interfaces::msg::Target>::SharedPtr target_sub_;
+            rclcpp::CallbackGroup::SharedPtr target_sub_callback_group_;
+            int last_target_mode_=0;
+            unsigned char lut[256];
+            void TargetCallBack(const rmos_interfaces::msg::Target::SharedPtr target);
+            void gamma(const cv::Mat & src, cv::Mat &dst)
             {
-                (*it)[0] = lut[((*it)[0])];
-                (*it)[1] = lut[((*it)[1])];
-                (*it)[2] = lut[((*it)[2])];
+                src.copyTo(dst);
+                cv::MatIterator_<cv::Vec3b> it,end;
+                for (it = dst.begin<cv::Vec3b>(), end = dst.end<cv::Vec3b>(); it != end; it++)
+                {
+                    (*it)[0] = lut[((*it)[0])];
+                    (*it)[1] = lut[((*it)[1])];
+                    (*it)[2] = lut[((*it)[2])];
+                }
             }
-        }
     };
 
     class VirtualCamNode : public virtual CamNode
     {
-    public:
-        VirtualCamNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-        ~VirtualCamNode();
-    protected:
-        std::shared_ptr<camera::VirtualCam> virtual_dev_;
-        std::thread capture_thread_;                    // 采图线程
+        public:
+            VirtualCamNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+            ~VirtualCamNode();
+            
+        protected:
+            std::shared_ptr<camera::VirtualCam> virtual_dev_;
+            std::thread capture_thread_;                    // 采图线程
     };
 } // namespace rmos_cam
 

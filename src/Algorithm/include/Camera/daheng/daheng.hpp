@@ -1,7 +1,3 @@
-//
-// Created by nuc12 on 23-6-14.
-//
-
 #ifndef RMOS_DAHENG_HPP
 #define RMOS_DAHENG_HPP
 
@@ -14,7 +10,6 @@
 #include "driver/GxIAPI.h"
 
 #include "../camera_interfaces/camera_interface.hpp"
-
 
 #define ACQ_TRANSFER_SIZE (64 * 1024)
 #define ACQ_TRANSFER_NUMBER_URB 64
@@ -81,5 +76,4 @@ namespace camera
 
 }
 
-
-#endif //RMOS_DAHENG_HPP
+#endif // RMOS_DAHENG_HPP

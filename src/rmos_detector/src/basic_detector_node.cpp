@@ -1,8 +1,4 @@
-//
-// Created by Wang on 23-6-16.
-//
-
-//ROS
+// ROS
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -10,16 +6,15 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "std_msgs/msg/bool.hpp"
 
-//STD
+// STD
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
 #include <cv_bridge/cv_bridge.h>
 
-//OpenCV
+// OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp>
@@ -33,9 +28,9 @@ namespace rmos_detector
     {
         // 从参数获取 is_left
         this->declare_parameter("is_left", false);
-        is_left_ = this->get_parameter("is_left").as_bool();
+        this->is_left_ = this->get_parameter("is_left").as_bool();
 
-        std::string node_name = is_left_ ? "basic_detector_l" : "basic_detector_r";
+        std::string node_name = this->is_left_ ? "basic_detector_l" : "basic_detector_r";
         RCLCPP_INFO(this->get_logger(), "Starting %s node", node_name.c_str());
 
         // 根据 is_left_ 选择话题名
@@ -169,15 +164,12 @@ namespace rmos_detector
 
             std::string text1 = std::to_string(armor.num_id);
             std::string text2 = std::to_string(int(armor.confidence*100));
-            cv::putText(image, text1, armor.left.up, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                        cv::Scalar(0, 255, 0), 1.8);
-            cv::putText(image, text2, armor.right.up, cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                        cv::Scalar(0, 255, 0), 0.5);
+            cv::putText(image, text1, armor.left.up, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 1.8);
+            cv::putText(image, text2, armor.right.up, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 0.5);
             cv::line(image,armor.left.up,armor.right.down ,cv::Scalar(255, 0, 255),1);
             cv::line(image,armor.left.down,armor.right.up ,cv::Scalar(255, 0, 255),1);
 
-            for (int i = 0; i < 4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 armor_msg.points[2*i]=armor.points[i].x;
                 armor_msg.points[2*i+1]=armor.points[i].y;
             }
@@ -260,7 +252,7 @@ namespace rmos_detector
             armor_msg.pose.orientation.y = tf2_quaternion.y();
             armor_msg.pose.orientation.z = tf2_quaternion.z();
             armor_msg.pose.orientation.w = tf2_quaternion.w();
-            cv::Point2f center(image.rows/2,image.cols/2);
+            cv::Point2f center(image.rows/2, image.cols/2);
             armor_msg.distance_to_image_center = sqrt((center.x-armor.rrect.center.x)*(center.x-armor.rrect.center.x)+
                                                       (center.y-armor.rrect.center.y)*(center.y-armor.rrect.center.y));
             armor_msg.num_id = armor.num_id;
@@ -271,26 +263,26 @@ namespace rmos_detector
 
             armor_msg.k = armor.k_;
             double distance = sqrt(armor_msg.pose.position.x*armor_msg.pose.position.x+
-                                           armor_msg.pose.position.y*armor_msg.pose.position.y+
-                                           armor_msg.pose.position.z*armor_msg.pose.position.z);
+                                   armor_msg.pose.position.y*armor_msg.pose.position.y+
+                                   armor_msg.pose.position.z*armor_msg.pose.position.z);
             std::string text3 = std::to_string(int(distance));
             cv::putText(image, text3, armor.right.down, cv::FONT_HERSHEY_SIMPLEX, 0.5,
                         cv::Scalar(0, 255, 0), 0.5);
-            //std::cout << "distance________" << distance << std::endl;
+            // std::cout << "distance________" << distance << std::endl;
             armors_msg.armors.push_back(armor_msg);
         }
+        
         auto time2 = steady_clock_.now();
 
-        if(debug::get_debug_option(base::SHOW_DETECT_COST))RCLCPP_INFO(this->get_logger(), "Cost %.4f ms", (time2-time1).seconds() * 1000);
+        if (debug::get_debug_option(base::SHOW_DETECT_COST))RCLCPP_INFO(this->get_logger(), "Cost %.4f ms", (time2-time1).seconds() * 1000);
 
-        if(debug::get_debug_option(base::SHOW_ARMOR))
-        {
+        if (debug::get_debug_option(base::SHOW_ARMOR)) {
             cv::line(image,this->aim_point_,this->aim_point_ ,cv::Scalar(255, 0, 255),5);
             debug_image_msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image).toImageMsg();
             debug_img_pub_.publish(*debug_image_msg_,camera_info_msg_);
         }
-        if(debug::get_debug_option(base::SHOW_BIN))
-        {
+
+        if (debug::get_debug_option(base::SHOW_BIN)) {
             debug_bin_image_msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", this->detector_->debug_binary_).toImageMsg();
             debug_bin_img_pub_.publish(*debug_bin_image_msg_,camera_info_msg_);
         }
@@ -300,8 +292,4 @@ namespace rmos_detector
 }
 
 #include <rclcpp_components/register_node_macro.hpp>
-
-// Register the component with class_loader.
-// This acts as a sort of entry point, allowing the component to be discoverable when its library
-// is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(rmos_detector::BasicDetectorNode)

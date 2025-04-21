@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-6-14.
-//
-
 #include "Base/armor.hpp"
 
 namespace base
@@ -63,8 +59,8 @@ namespace base
         float center_distance=cv::norm(left.rrect.center - right.rrect.center)*2 /(left.length + right.length);
         type = center_distance > 3.2 ? ArmorType::BIG : ArmorType::SMALL;
         //get rect
-        auto width = 15+sqrt(pow(right.rrect.center.x - left.rrect.center.x, 2) + pow(right.rrect.center.y - left.rrect.center.y, 2));
-        auto height = 15+MAX(left.rrect.size.height, right.rrect.size.height);
+        auto width = 15 + sqrt(pow(right.rrect.center.x - left.rrect.center.x, 2) + pow(right.rrect.center.y - left.rrect.center.y, 2));
+        auto height = 15 + MAX(left.rrect.size.height, right.rrect.size.height);
         auto angle = atan2(right.rrect.center.y - left.rrect.center.y, right.rrect.center.x - left.rrect.center.x) * 180 / CV_PI;
         this-> rrect = cv::RotatedRect(center_point, cv::Size(width, height), angle);
         this->rect = cv::Rect2d(center_point - cv::Point2d(width / 2.0, height / 2.0), cv::Size(width, height));

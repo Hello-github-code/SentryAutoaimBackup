@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-7-10.
-//
-
 #ifndef RMOS_PROCESSER_NODE_HPP
 #define RMOS_PROCESSER_NODE_HPP
 
@@ -31,7 +27,6 @@
 #include "message_filters/subscriber.h"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-//interfaces
 #include "rmos_interfaces/msg/aimpoint.hpp"
 #include "rmos_interfaces/msg/armors.hpp"
 #include "rmos_interfaces/msg/armor.hpp"
@@ -131,6 +126,7 @@ namespace rmos_processer
         // camera param
         sensor_msgs::msg::CameraInfo camera_info_msg_;
         cv::Mat camera_matrix_;
+        cv::Mat dist_coeffs_;
 
         /* Buffer */
         std::queue<rmos_interfaces::msg::AutoaimState> autoaim_state_buf_;
@@ -138,13 +134,11 @@ namespace rmos_processer
         float bs_total = 0;
         float bs_v = 22;
 
-        int attack_id = -1 ;
+        int attack_id = -1;
 
         geometry_msgs::msg::TransformStamped sentry_transform;
 
         double sentry_last_time_; 
-
-        cv::Mat dist_coeffs_;
 
         int mode_ = 0;
   
@@ -154,7 +148,6 @@ namespace rmos_processer
         float big_height = 55;
         std::vector<cv::Point3f> small_armor;
         std::vector<cv::Point3f> big_armor;
-        std::vector<cv::Point3f> rune_armor; //TO DO
     };
 }
 

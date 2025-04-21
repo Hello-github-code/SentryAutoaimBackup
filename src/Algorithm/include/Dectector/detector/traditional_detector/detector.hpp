@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-6-15.
-//
-
 #ifndef RMOS_DETECTOR_HPP
 #define RMOS_DETECTOR_HPP
 

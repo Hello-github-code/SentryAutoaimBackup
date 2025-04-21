@@ -1,13 +1,9 @@
-//
-// Created by nuc12 on 23-7-10.
-//
-
 #include "../include/processer_node.hpp"
 #include "angles/angles.h"
 
-namespace rmos_processer {
-    ProcesserNode::ProcesserNode(const rclcpp::NodeOptions &options)
-        : Node("processer", options)
+namespace rmos_processer 
+{
+    ProcesserNode::ProcesserNode(const rclcpp::NodeOptions &options) : Node("processer", options)
     {
         // 从参数获取 is_left
         this->declare_parameter("is_left", false);
@@ -16,14 +12,14 @@ namespace rmos_processer {
         std::string node_name = is_left_ ? "processer_l" : "processer_r";
         RCLCPP_INFO(this->get_logger(), "Starting %s node", node_name.c_str());
 
-        controler_ = std::make_shared<processer::Controler>(is_left_);
+        this->controler_ = std::make_shared<processer::Controler>(is_left_);
 
         std::string camera_topic = is_left_ ? "/daheng_camera_info_l" : "/daheng_camera_info_r";
         std::string armor_topic = is_left_ ? "/rmos_detector/armors_l" : "/rmos_detector/armors_r";
         std::string target_topic = is_left_ ? "/target_l" : "/target_r";
         std::string aim_topic = is_left_ ? "/aim_l" : "/aim_r";
         std::string follow_topic = is_left_ ? "/follow_target_l" : "/follow_target_r";
-        std::string yaw_topic = is_left_ ? "/yawl_marker" : "/yawr_marker";
+        std::string yaw_topic = is_left_ ? "/yawl_marker_l" : "/yawr_marker_r";
         std::string service_name = is_left_ ? "AimTarget_l" : "AimTarget_r";
         std::string autoaim_topic = is_left_ ? "/autoaim_state_l" : "/autoaim_state_r";
         std::string marker_topic = is_left_ ? "/process/marker_l" : "/process/marker_r";
@@ -38,19 +34,25 @@ namespace rmos_processer {
                 this->camera_info_msg_ = *camera_info_msg;
 
                 this->camera_matrix_.create(3, 3, CV_64FC1);
+                this->dist_coeffs_.create(1, 5, CV_64FC1);
 
                 for (int i = 0; i < 9; i++)
                 {
                     this->camera_matrix_.at<double>(i / 3, i % 3) = camera_info_msg->k[i];
                 }
+                for (int i = 0; i < camera_info_msg->d.size(); i++)
+                {
+                    this->dist_coeffs_.at<double>(0, i) = camera_info_msg->d[i];
+                }
+
                 this->camera_info_sub_.reset();
+                this->controler_->getParam(this->camera_matrix_);
             });
 
         this->prosser_server_ =this->create_service<sentry_interfaces::srv::AimTarget>(
-            service_name, 
-            std::bind(&ProcesserNode::sentrycallback, this, std::placeholders::_1, std::placeholders::_2));
+            service_name, std::bind(&ProcesserNode::sentrycallback, this, std::placeholders::_1, std::placeholders::_2));
 
-        // set subscriber for imu_time, armor, and bullet_speed
+        // set subscriber
         using rclcpp::CallbackGroupType;
         this->armors_sub_callback_group_ = this->create_callback_group(CallbackGroupType::Reentrant);
         armors_sub_.subscribe(this, armor_topic, rmw_qos_profile_sensor_data);
@@ -58,13 +60,13 @@ namespace rmos_processer {
         // Subscriber with tf2 message_filter
         tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
         auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-                this->get_node_base_interface(), this->get_node_timers_interface());
+            this->get_node_base_interface(), this->get_node_timers_interface());
         tf2_buffer_->setCreateTimerInterface(timer_interface);
         tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
         target_frame_ = "Gimbal_Link";
         tf2_filter_ = std::make_shared<tf2_filter>(
-                armors_sub_, *tf2_buffer_, target_frame_, 100, this->get_node_logging_interface(),
-                this->get_node_clock_interface(), std::chrono::duration<int>(100));
+            armors_sub_, *tf2_buffer_, target_frame_, 100, this->get_node_logging_interface(),
+            this->get_node_clock_interface(), std::chrono::duration<int>(100));
         tf2_filter_->registerCallback(&ProcesserNode::armorsCallBack, this);
 
         bs_buff.push(22);
@@ -164,7 +166,7 @@ namespace rmos_processer {
         big_armor.push_back(cv::Point3d(0.0,-big_width / 2.0, -big_height / 2.0));
 
         // 根据 is_left_ 选择对应的坐标系
-        std::string cam_link = is_left_ ? "LCam_Link" : "RCam_Link";
+        std::string cam_link = is_left_ ? "Gimbal_Link" : "Gimbal_Link";
         
         // 修改所有 marker 的 frame_id
         armor_marker_.header.frame_id = cam_link;
@@ -178,12 +180,12 @@ namespace rmos_processer {
 
     void ProcesserNode::armorsCallBack(const rmos_interfaces::msg::Armors::SharedPtr armors_msg)
     {
-        this->controler_->getParam(this->camera_matrix_);
-
-        rmos_interfaces::msg::Aimpoint aim_msg;
+        std::vector <base::Armor> new_armors;
+        double timestamp = armors_msg->header.stamp.sec + armors_msg->header.stamp.nanosec * 1e-9;
 
         rmos_interfaces::msg::Target target_msg;
         target_msg.header.frame_id = target_frame_;
+        rmos_interfaces::msg::Aimpoint aim_msg;
 
         detect_marker_array_.markers.clear();
         process_marker_array_.markers.clear();
@@ -194,16 +196,14 @@ namespace rmos_processer {
         sentry_interfaces::msg::FollowTarget followtarget_msg;
         followtarget_msg.target.header.stamp = armors_msg->header.stamp;
 
-        std::vector <base::Armor> new_armors;
-
-        double timestamp = armors_msg->header.stamp.sec + armors_msg->header.stamp.nanosec * 1e-9;
-
         // 根据 is_left_ 选择对应的坐标系
         std::string cam_link = is_left_ ? "LCam_Link" : "RCam_Link";
 
-        for (auto &armor: armors_msg->armors) {
+        for (auto &armor: armors_msg->armors) 
+        {
             if (attack_id == armor.num_id && armor.confidence < 80 && armor.num_id != 7)
                 continue;
+            // std::cout << "confidence " << (int)(armor.confidence) << '\n';
 
             base::Armor new_armor;
             new_armor.num_id = armor.num_id;
@@ -216,26 +216,17 @@ namespace rmos_processer {
             ps.pose = armor.pose;
             try {
                 armor.pose = tf2_buffer_->transform(ps, target_frame_).pose;
-            }
-            catch (const tf2::LookupException &ex) {
+            } catch (const tf2::LookupException &ex) {
+                RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
+                return;
+            } catch (const tf2::ExtrapolationException &ex) {
                 RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
                 return;
             }
-            catch (const tf2::ExtrapolationException &ex) {
-                RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
-                return;
-            }
-            // std::cout << "confidence " << (int)(armor.confidence) << '\n';
-
-            // Get armor yaw
-            tf2::Quaternion tf_armor_q;
-            tf2::fromMsg(armor.pose.orientation, tf_armor_q);
-            double armor_roll, armor_pitch, armor_yaw;
-            tf2::Matrix3x3(tf_armor_q).getRPY(armor_roll, armor_pitch, armor_yaw);
 
             double temp_roll = 0;
             double temp_pitch;
-            double temp_yaw = armor_yaw;
+            double temp_yaw = armor.yaw;
 
             temp_pitch = -15.0 / 180.0 * M_PI;
             if (armor.num_id == 7)
@@ -247,34 +238,34 @@ namespace rmos_processer {
             guess_pose.pose.orientation.y = cos(temp_pitch/2) * sin(temp_roll/2) * cos(temp_yaw/2) + sin(temp_pitch/2) * cos(temp_roll/2) * sin(temp_yaw/2);
             guess_pose.pose.orientation.z = cos(temp_pitch/2) * cos(temp_roll/2) * sin(temp_yaw/2) - sin(temp_pitch/2) * sin(temp_roll/2) * cos(temp_yaw/2);
             guess_pose.pose.orientation.w = cos(temp_pitch/2) * cos(temp_roll/2) * cos(temp_yaw/2) + sin(temp_pitch/2) * sin(temp_roll/2) * sin(temp_yaw/2);
+            guess_pose.pose.position.x = armor.pose.position.x;
+            guess_pose.pose.position.y = armor.pose.position.y;
+            guess_pose.pose.position.z = armor.pose.position.z;
             geometry_msgs::msg::PoseStamped gs;
             gs = guess_pose;
             gs.header.frame_id = target_frame_;
             try {
                 guess_pose.pose = tf2_buffer_->transform(gs, cam_link).pose;
-            }
-            catch (const tf2::LookupException &ex) {
+            } catch (const tf2::LookupException &ex) {
                 RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
                 return;
-            }
-            catch (const tf2::ExtrapolationException &ex) {
+            } catch (const tf2::ExtrapolationException &ex) {
                 RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
                 return;
             }
 
             double guess_theta = 2 * acos(guess_pose.pose.orientation.w);
 
-            cv::Mat correct_rvec,correct_tvec;
+            cv::Mat correct_rvec, correct_tvec;
             correct_rvec.create(3, 1, CV_64FC1);
             correct_tvec.create(3, 1, CV_64FC1);
 
             correct_rvec.at<double>(0,0) = guess_pose.pose.orientation.x / sin(guess_theta*0.5) * guess_theta;
             correct_rvec.at<double>(1,0) = guess_pose.pose.orientation.y / sin(guess_theta*0.5) * guess_theta;
             correct_rvec.at<double>(2,0) = guess_pose.pose.orientation.z / sin(guess_theta*0.5) * guess_theta;
-
-            correct_tvec.at<double>(0,0) = armor.pose.position.x * 1000;
-            correct_tvec.at<double>(1,0) = armor.pose.position.y * 1000;
-            correct_tvec.at<double>(2,0) = armor.pose.position.z * 1000;
+            correct_tvec.at<double>(0,0) = guess_pose.pose.position.x * 1000;
+            correct_tvec.at<double>(1,0) = guess_pose.pose.position.y * 1000;
+            correct_tvec.at<double>(2,0) = guess_pose.pose.position.z * 1000;
 
             std::vector<cv::Point2d> image_points;
             cv::Point2d image_point;
@@ -327,15 +318,13 @@ namespace rmos_processer {
             armor.pose.position.y = correct_tvec.at<double>(1, 0) / 1000;
             armor.pose.position.z = correct_tvec.at<double>(2, 0) / 1000;
 
-            ps.pose = armor.pose; 
+            ps.pose = armor.pose;
             try {
                 armor.pose = tf2_buffer_->transform(ps, target_frame_).pose;
-            }                
-            catch (const tf2::LookupException &ex) {
+            } catch (const tf2::LookupException &ex) {
                 RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
                 return;
-            }
-            catch (const tf2::ExtrapolationException &ex) {
+            } catch (const tf2::ExtrapolationException &ex) {
                 RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
                 return;
             }
@@ -344,46 +333,48 @@ namespace rmos_processer {
             new_armor.position.y = armor.pose.position.y;
             new_armor.position.z = armor.pose.position.z;
 
+            tf2::Quaternion tf_armor_q;
             tf2::fromMsg(armor.pose.orientation, tf_armor_q);
-
+            double armor_roll, armor_pitch, armor_yaw;
             tf2::Matrix3x3(tf_armor_q).getRPY(armor_roll, armor_pitch, armor_yaw);
-            armor_yaw=armor.yaw;
+            // armor_yaw = armor.yaw;
+
+            // 发出来查看是否有问题
             std_msgs::msg::Float32 yaw_msgs;
-            yaw_msgs.data = armor_yaw/3.14159*180;
+            yaw_msgs.data = armor_yaw / M_PI * 180;
             yaw_mark_pub_->publish(yaw_msgs);
             // std::cout << "armor_yaw = " << armor_yaw / 3.1415926 * 180 << "armor_pitch = " << armor_pitch / 3.1415926 * 180 << "   armor_roll = " << armor_roll / 3.1415926 * 180 << std::endl;
 
             new_armor.yaw = controler_->tracker_[armor.num_id].last_yaw_ +
                 angles::shortest_angular_distance(controler_->tracker_[armor.num_id].last_yaw_, armor_yaw);
 
-            if (new_armor.position.z > 0.5 && new_armor.num_id != 7)
-                continue;
+            // if (new_armor.position.z > 0.5 && new_armor.num_id != 7)
+            //     continue;
 
-            cv::Point3f armor_point;
-            armor_point.x = new_armor.position.x;
-            armor_point.y = new_armor.position.y;
-            armor_point.z = new_armor.position.z;
-            if (controler_->ballistic_solver_.getAngleTimer(armor_point * 1000).x > 13 && armor.num_id != 7)
-                continue;
+            // cv::Point3f armor_point;
+            // armor_point.x = new_armor.position.x;
+            // armor_point.y = new_armor.position.y;
+            // armor_point.z = new_armor.position.z;
+            // if (controler_->ballistic_solver_.getAngleTimer(armor_point * 1000).x > 13 && armor.num_id != 7)
+            //     continue;
 
-            // erase armors ...
             new_armors.push_back(new_armor);
 
             armor_marker_.id++;
             armor_marker_.pose = armor.pose;
             text_marker_.id++;
             text_marker_.pose.position = armor.pose.position;
-            text_marker_.pose.position.y -= 0.1;
+            // text_marker_.pose.position.y -= 0.1;
             text_marker_.text = std::to_string(armor.num_id);
             detect_marker_array_.markers.emplace_back(text_marker_);
         }
 
         rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
         auto time = steady_clock_.now();
-        if (time.seconds() - sentry_last_time_ > 5.0) {
+        if (time.seconds() - this->sentry_last_time_ > 5.0) {
             int p[14] = {7, 6, 1, 3, 11, 4, 12, 2, 5, 13, -1, -1, -1, -1};
             for (int i = 0; i < 14; i++)
-            prioritys[i] = p[i];
+                prioritys[i] = p[i];
             mode_ = 0;
         }
 
@@ -485,7 +476,7 @@ namespace rmos_processer {
             float gun_yaw = gun_move_yaw + gun_yaw_offset_;
 
             // 将瞄准点投影回2d平面，通过像素距离判断，判断开火
-            bool is2_fire = false;
+            bool is_fire2 = false;
             if (if_center)
             {
                 geometry_msgs::msg::PoseStamped p2x;
@@ -505,7 +496,7 @@ namespace rmos_processer {
                 cv::Point3f aiming2_point_camera(p2x.pose.position.x, p2x.pose.position.y, p2x.pose.position.z);
 
                 cv::Point2f aim2_point_2d;
-                is2_fire = this->controler_->judgeFire(aiming2_point_camera, this->controler_->tracker_[attack_id].rotate_target_state(1), aim2_point_2d, false, attack_id);
+                is_fire2 = this->controler_->judgeFire(aiming2_point_camera, this->controler_->tracker_[attack_id].rotate_target_state(1), aim2_point_2d, false, attack_id);
             }
 
             geometry_msgs::msg::PoseStamped px;
@@ -531,9 +522,8 @@ namespace rmos_processer {
             aim_msg.aim_point.y = aim_point_2d.y;
             this->aim_pub_->publish(aim_msg);
 
-            // if (if_center)
-            //     is_fire |= is2_fire;
-            // is_fire = is2_fire;
+            is_fire |= is_fire2;
+
             // if (attack_id == 7 && abs(this->controler_->tracker_[attack_id].rotate_target_state(1)) != 2.512)
             //     is_fire = false;
             // if (move_state == 2)
@@ -557,15 +547,15 @@ namespace rmos_processer {
                 //     target_msg.gun_pitch += 1.3;
             }
 
-            if (gun_pitch < 0) {
-                target_msg.id = -1;
-                target_msg.track_state = this->controler_->tracker_[9].tracker_state;
-                target_msg.position.x = 0;
-                target_msg.position.y = 0;
-                target_msg.position.z = 0;
-                target_msg.gun_pitch = 0;
-                target_msg.gun_yaw = 0;
-            }
+            // if (gun_pitch < -15) {
+            //     target_msg.id = -1;
+            //     target_msg.track_state = this->controler_->tracker_[9].tracker_state;
+            //     target_msg.position.x = 0;
+            //     target_msg.position.y = 0;
+            //     target_msg.position.z = 0;
+            //     target_msg.gun_pitch = 0;
+            //     target_msg.gun_yaw = 0;
+            // }
         }
         else
         {
@@ -749,7 +739,7 @@ namespace rmos_processer {
     {
         rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
         auto time = steady_clock_.now();
-        sentry_last_time_ = time.seconds();
+        this->sentry_last_time_ = time.seconds();
        
         int i = 0;
         for (const auto &list_ : request->list)
@@ -789,8 +779,4 @@ namespace rmos_processer {
 }
 
 #include <rclcpp_components/register_node_macro.hpp>
-
-// Register the component with class_loader.
-// This acts as a sort of entry point, allowing the component to be discoverable when its library
-// is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(rmos_processer::ProcesserNode)

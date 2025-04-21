@@ -1,12 +1,8 @@
-//
-// Created by Wang on 23-6-14.
-//
-
-//std
+// std
 #include <chrono>
 #include <sstream>
 
-//ros
+// ros
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <cv_bridge/cv_bridge.h>
 
@@ -67,8 +63,8 @@ namespace rmos_cam
 
         cam_dev_->open(&open_param_);
         for (int i = 0; i < 256; i++) {
-            float normalize = (float)(i/255.0);
-            lut[i] = cv::saturate_cast<uchar>(pow(normalize,0.6) * 255.0f);
+            float normalize = (float)(i / 255.0);
+            lut[i] = cv::saturate_cast<uchar>(pow(normalize, 0.6) * 255.0f);
         }
 
         // 根据 is_left_ 选择话题名和frame_id
@@ -103,7 +99,7 @@ namespace rmos_cam
 
                 if (cam_dev_->grab_image(image_)) {
                     gamma(image_, image_g);
-                    image_msg_ = cv_bridge::CvImage(std_msgs::msg::Header(),"bgr8",image_g).toImageMsg();
+                    image_msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image_g).toImageMsg();
                     (*image_msg_).header.stamp = camera_info_msg_.header.stamp = this->now() - rclcpp::Duration(0, 23 * 1e6);
                     (*image_msg_).header.frame_id = frame_id;
                     camera_info_msg_.header.frame_id = frame_id;
@@ -131,5 +127,4 @@ namespace rmos_cam
 } // namespace rmos_cam
 
 #include "rclcpp_components/register_node_macro.hpp"
-
 RCLCPP_COMPONENTS_REGISTER_NODE(rmos_cam::DahengCamNode)

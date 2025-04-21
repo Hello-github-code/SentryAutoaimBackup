@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-6-16.
-//
-
 #ifndef RMOS_DETECTOR_NODE_HPP
 #define RMOS_DETECTOR_NODE_HPP
 
@@ -21,9 +17,9 @@
 #include <string>
 #include <vector>
 
-//interfaces
-#include "rmos_interfaces/msg/armors.hpp"
+// interfaces
 #include "rmos_interfaces/msg/armor.hpp"
+#include "rmos_interfaces/msg/armors.hpp"
 #include "rmos_interfaces/msg/aimpoint.hpp"
 #include "rm2_referee_msgs/msg/robot_status.hpp"
 #include "../../Algorithm/include/Dectector/detector_interfaces/detector_interface.hpp"
@@ -38,57 +34,55 @@ namespace rmos_detector
 {
     class BaseDetectorNode : public rclcpp::Node
     {
-    public:
-        BaseDetectorNode(const std::string &node_name,
-                         const rclcpp::NodeOptions &options) : Node(node_name, options)
-        {
-            RCLCPP_INFO(this->get_logger(), "Starting node [%s]", node_name.c_str());
-        }
+        public:
+            BaseDetectorNode(const std::string &node_name, const rclcpp::NodeOptions &options) : Node(node_name, options) {
+                RCLCPP_INFO(this->get_logger(), "Starting node [%s]", node_name.c_str());
+            }
 
-        bool is_left_;  // 添加标志位
-        cv::Mat camera_matrix_;
-        cv::Mat dist_coeffs_;
-        float small_width = 135;
-        float small_height = 57;
-        float big_width = 225;
-        float big_height = 55;
+            bool is_left_;  // 添加标志位
+            cv::Mat camera_matrix_;
+            cv::Mat dist_coeffs_;
+            float small_width = 135;
+            float small_height = 57;
+            float big_width = 225;
+            float big_height = 55;
 
-    protected:
-        std::shared_ptr<image_transport::Subscriber> image_sub_;
-        rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
-        rclcpp::Subscription<rmos_interfaces::msg::Aimpoint>::SharedPtr aim_sub_;
-        rclcpp::Subscription<rm2_referee_msgs::msg::RobotStatus>::SharedPtr color_sub_;
-        sensor_msgs::msg::CameraInfo camera_info_msg_;
+        protected:
+            std::shared_ptr<image_transport::Subscriber> image_sub_;
+            rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
+            rclcpp::Subscription<rmos_interfaces::msg::Aimpoint>::SharedPtr aim_sub_;
+            rclcpp::Subscription<rm2_referee_msgs::msg::RobotStatus>::SharedPtr color_sub_;
+            sensor_msgs::msg::CameraInfo camera_info_msg_;
     };
 
     class BasicDetectorNode : public BaseDetectorNode
     {
-    public:
-        BasicDetectorNode(const rclcpp::NodeOptions &options);
-        
-    protected:
-        void imageCallBack(const sensor_msgs::msg::Image::ConstSharedPtr &image_msg);
+        public:
+            BasicDetectorNode(const rclcpp::NodeOptions &options);
 
-        // std::shared_ptr<detector::CjDetector> cj_detector_;
-        std::shared_ptr<detector::Detector> detector_;
+        protected:
+            void imageCallBack(const sensor_msgs::msg::Image::ConstSharedPtr &image_msg);
 
-        // std::shared_ptr<detector::CjClassifier> cj_classifier_;
-        std::shared_ptr<detector::NumberClassifier> number_classfier_;
+            // std::shared_ptr<detector::CjDetector> cj_detector_;
+            std::shared_ptr<detector::Detector> detector_;
 
-        std::shared_ptr<detector::PnpSolver> pnp_solver_;
+            // std::shared_ptr<detector::CjClassifier> cj_classifier_;
+            std::shared_ptr<detector::NumberClassifier> number_classfier_;
 
-        // 发布器
-        rclcpp::Publisher<rmos_interfaces::msg::Armors>::SharedPtr armors_pub_;
-        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_publisher_;
+            std::shared_ptr<detector::PnpSolver> pnp_solver_;
 
-        // 调试信息发布器
-        image_transport::CameraPublisher debug_img_pub_;
-        image_transport::CameraPublisher debug_bin_img_pub_;
-        sensor_msgs::msg::Image::SharedPtr debug_image_msg_;
-        sensor_msgs::msg::Image::SharedPtr debug_bin_image_msg_;      
-        
-        cv::Point2f aim_point_{cv::Point2f(0, 0)};      
+            // 发布器
+            rclcpp::Publisher<rmos_interfaces::msg::Armors>::SharedPtr armors_pub_;
+            std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_publisher_;
+
+            // 调试信息发布器
+            image_transport::CameraPublisher debug_img_pub_;
+            image_transport::CameraPublisher debug_bin_img_pub_;
+            sensor_msgs::msg::Image::SharedPtr debug_image_msg_;
+            sensor_msgs::msg::Image::SharedPtr debug_bin_image_msg_;
+
+            cv::Point2f aim_point_{cv::Point2f(0, 0)};
     };
 } // namespace rmos_detector
 
-#endif //RMOS_DETECTOR_NODE_HPP
+#endif // RMOS_DETECTOR_NODE_HPP

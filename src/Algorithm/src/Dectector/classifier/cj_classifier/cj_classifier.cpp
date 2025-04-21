@@ -1,7 +1,3 @@
-//
-// Created by Wang on 23-6-19.
-//
-
 #include "Dectector/classifier/cj_classifier/cj_classifier.hpp"
 
 namespace detector

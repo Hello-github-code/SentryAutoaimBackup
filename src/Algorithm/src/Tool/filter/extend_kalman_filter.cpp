@@ -1,7 +1,3 @@
-//
-// Created by nuc12 on 23-7-12.
-//
-
 #include "Tool/filter/extend_kalman_filter.hpp"
 #include <iostream>
 
@@ -23,111 +19,95 @@ namespace tool
           x_post(n)
     {}
 
-    void ExtendedKalmanFilter::setState(const Eigen::VectorXd & x0) { x_post = x0; }
-
-    Eigen::MatrixXd ExtendedKalmanFilter::predict(float vyaw)
-    {
-        F = jacobian_f(x_post), Q = update_Q();
-        
-        // Q(0,0) /= pow(40, abs(vyaw));
-        // Q(0,1) /= pow(40, abs(vyaw));
-        // Q(1,0) /= pow(40, abs(vyaw));
-        // Q(3,2) /= pow(40, abs(vyaw));
-        // Q(2,3) /= pow(40, abs(vyaw));
-        // Q(2,2) /= pow(40, abs(vyaw));
-        
-        // if (abs(vyaw) > 3) {
-        //     Q(3,3) /= pow(4.6, abs(vyaw));
-        //     Q(1,1) /= pow(4.6, abs(vyaw));
-        // } else { 
-        //     Q(3,3) /= (1 + 2.25 * abs(vyaw));
-        //     Q(1,1) /= (1 + 2.25 * abs(vyaw));
-        // }
-
-        // if (abs(dvx) < 0.1 && abs(dvy) < 0.1) {
-        //     Q(1,1) *= 100 * (0.009 + 10 * abs(dvx));
-        //     Q(3,3) *= 100 * (0.009 + 10 * abs(dvy));
-        // }
-
-        // if (abs(vyaw) < 0.5) {
-        //     Q(3,3) *= 50;
-        //     Q(1,1) *= 50;
-        // }
-
-        // std::cout << dvx << '\n';
-        // std::cout << dvy << '\n';
-
-        x_pri = f(x_post);
-        P_pri = F * P_post * F.transpose() + Q;
-
-        // handle the case when there will be no measurement before the next predict
-        x_post = x_pri;
-        P_post = P_pri;
-
-        last_vx = x_pri(1,0);
-        last_vy = x_pri(3,0);
-
-        return x_pri;
-    }
+    void ExtendedKalmanFilter::setState(const Eigen::VectorXd & x0) { this->x_post = x0; }
 
     Eigen::MatrixXd ExtendedKalmanFilter::predict()
     {
-        F = jacobian_f(x_post), Q = update_Q();
-        // Q(1,1) /= pow(1.45, abs(x_post(1, 0)));
+        this->F = jacobian_f(this->x_post), this->Q = update_Q();
 
-        x_pri = f(x_post);
-        P_pri = F * P_post * F.transpose() + Q;
+        this->x_pri = f(this->x_post);
+        this->P_pri = this->F * this->P_post * this->F.transpose() + this->Q;
 
         // handle the case when there will be no measurement before the next predict
-        x_post = x_pri;
-        P_post = P_pri;
+        this->x_post = this->x_pri;
+        this->P_post = this->P_pri;
 
-        return x_pri;
+        return this->x_pri;
+    }
+
+    Eigen::MatrixXd ExtendedKalmanFilter::predict(double vyaw)
+    {
+        this->F = jacobian_f(this->x_post), this->Q = update_Q();
+        
+        if (vyaw > 2)  {
+            this->u_q_count++;
+        }
+        
+        if (this->u_q_count % 5 == 0) {
+            Q(0,0) /= pow(3, abs(vyaw));
+            Q(0,1) /= pow(3, abs(vyaw));
+            Q(1,0) /= pow(3, abs(vyaw));
+            Q(2,2) /= pow(3, abs(vyaw));
+            Q(2,3) /= pow(3, abs(vyaw));
+            Q(3,2) /= pow(3, abs(vyaw));
+
+            this->u_q_count = 0;
+        }
+
+        this->x_pri = f(this->x_post);
+        this->P_pri = this->F * this->P_post * this->F.transpose() + this->Q;
+
+        // handle the case when there will be no measurement before the next predict
+        this->x_post = this->x_pri;
+        this->P_post = this->P_pri;
+
+        this->last_vx = this->x_pri(1);
+        this->last_vy = this->x_pri(3);
+
+        return this->x_pri;
     }
 
     Eigen::MatrixXd ExtendedKalmanFilter::update(const Eigen::VectorXd & z)
     {
-        H = jacobian_h(x_pri), R = update_R(z);
+        this->H = jacobian_h(this->x_pri), this->R = update_R(z);
 
-        K = P_pri * H.transpose() * (H * P_pri * H.transpose() + R).inverse();
-        x_post = x_pri + K * (z - h(x_pri));
-        P_post = (I - K * H) * P_pri;
+        this->K = this->P_pri * this->H.transpose() * (this->H * this->P_pri * this->H.transpose() + this->R).inverse();
+        this->x_post = this->x_pri + this->K * (z - h(this->x_pri));
+        this->P_post = (this->I - this->K * this->H) * this->P_pri;
 
-        // std::cout << "ekfupdatinf?" << '\n';
-
-        return x_post;//
+        return this->x_post;
     }
 
     Eigen::MatrixXd ExtendedKalmanFilter::update(const Eigen::VectorXd & z, double vyaw)
     {
-        H = jacobian_h(x_pri), R = update_R(z);
+        this->H = jacobian_h(this->x_pri), this->R = update_R(z);
 
-        // if (abs(vyaw) > 2) {
-        //     R(0,0) *= 10;
-        //     R(0,1) *= 10;
-        //     R(0,2) *= 10;
-        // }
-        // if (abs(vyaw) > 5) {
-        //     R(0,0) *= 50;
-        //     R(0,1) *= 50;
-        //     R(0,2) *= 50;
-        // }
+        double v_xy = sqrt(pow(this->last_vx, 2) + pow(this->last_vy, 2));
 
-        K = P_pri * H.transpose() * (H * P_pri * H.transpose() + R).inverse();
-        x_post = x_pri + K * (z - h(x_pri));
-        P_post = (I - K * H) * P_pri;
+        if (v_xy > 1)  {
+            this->u_r_count++;
+        }
 
-        // std::cout << "ekfupdatinf?" << '\n';
+        if (this->u_r_count % 5 == 0) {
+            R(0, 0) /= pow(7, v_xy);
+            R(1, 1) /= pow(7, v_xy);
 
-        // dvx = x_post(1,0) - last_vx;
-        // dvy = x_post(3,0) - last_vy;
+            this->u_r_count = 0;
+        }
+
+        this->K = this->P_pri * this->H.transpose() * (this->H * this->P_pri * this->H.transpose() + this->R).inverse();
+        this->x_post = this->x_pri + this->K * (z - h(this->x_pri));
+        this->P_post = (this->I - this->K * this->H) * this->P_pri;
+
+        // dvx = x_post(1) - last_vx;
+        // dvy = x_post(3) - last_vy;
         // if (abs(dvx) > 0.8)
-        //     x_post(1,0) = last_vx;
+        //     x_post(1) = last_vx;
         // if (abs(dvy) > 0.8)
-        //     x_post(3,0) = last_vy;
-        // last_vx = x_post(1,0);
-        // last_vy = x_post(3,0);
+        //     x_post(3) = last_vy;
+        // last_vx = x_post(1);
+        // last_vy = x_post(3);
 
-        return x_post;
+        return this->x_post;
     }
 }

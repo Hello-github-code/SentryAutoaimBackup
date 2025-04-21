@@ -1,11 +1,7 @@
-//
-// Created by nuc12 on 23-6-26.
-//
-
 #ifndef RMOS_VIRTUAL_CAM_HPP
 #define RMOS_VIRTUAL_CAM_HPP
 
-#endif //RMOS_VIRTUAL_CAM_HPP
+#endif // RMOS_VIRTUAL_CAM_HPP
 
 // OpenCV
 #include <opencv2/core.hpp>

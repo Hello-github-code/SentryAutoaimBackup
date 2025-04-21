@@ -1,7 +1,3 @@
-//
-// Created by nuc12 on 23-7-18.
-//
-
 #include "Processer/ballistic_solver.hpp"
 
 namespace processer
